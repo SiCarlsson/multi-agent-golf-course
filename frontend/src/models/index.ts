@@ -6,8 +6,10 @@ export interface Point {
 export interface Hole {
   fairway: Point[];
   green: Point[];
-  tee: Point;
+  tees: Point[][];
   flag: Point;
+  bunkers?: Point[][];
+  water?: Point[][];
 }
 
 export interface Ball {

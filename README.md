@@ -4,8 +4,6 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ---
 
-## **Suggested Tech Stack**
-
 ### Frontend (React + TypeScript)
 - **React + TypeScript** – component-based, type-safe
 - **TailwindCSS** – HUD, scoreboards, buttons, and panels
@@ -23,7 +21,7 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ---
 
-## **Suggested Frontend Architecture / MVP Structure**
+## **Frontend Architecture / MVP Structure**
 
 - **Model**
   - Holes, fairway/green/sand/water polygons

@@ -1,7 +1,11 @@
-import json
-from pathlib import Path
+import logging
+from backend.scripts.convert_geojson import convert_all_holes
+
+logger = logging.getLogger(__name__)
 
 
-def load_hole(file_path: Path) -> dict:
-    with open(file_path) as f:
-        return json.load(f)
+def regenerate_course_data() -> None:
+    """Regenerate all course data files from raw GeoJSON."""
+    logger.info("Regenerating course data from raw GeoJSON files...")
+    convert_all_holes()
+    logger.info("Course data regeneration complete!")

@@ -1,15 +1,14 @@
-from fastapi import FastAPI, WebSocket
-from backend.loader import load_hole
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-
-# Load hole
-hole1 = load_hole("backend/course/hole_1.json")
+from backend.loader import regenerate_course_data
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
-    await ws.accept()
-    while True:
-        # send hole geometry and ball/agent state
-        await ws.send_json({"hole": hole1, "ball": {"x": 50, "y": 50}})
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages application startup and shutdown events."""
+    regenerate_course_data()
+    yield # Separate startup and shutdown (shutdown after yield)
+
+
+app = FastAPI(lifespan=lifespan)
