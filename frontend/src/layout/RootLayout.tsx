@@ -5,9 +5,43 @@ const RootLayout = ({ model }: { model: GameState }) => {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-green-50 to-emerald-100">
-      <nav>
-        <NavLink to="/">Home</NavLink>
-        <NavLink to="/about">About</NavLink>
+      <nav className="flex items-center justify-center relative h-26 bg-white border-b border-gray-200">
+        <NavLink to="/" className="absolute left-4">
+          <img src="/Logotype.png" alt="Logo" className="h-24 mx-4" />
+        </NavLink>
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `mx-6 px-2 py-2 font-medium transition-all border-b-2 ${isActive
+              ? 'text-green-700 border-green-600'
+              : 'text-gray-600 border-transparent hover:text-green-600 hover:border-green-300'
+            }`
+          }
+        >
+          Course
+        </NavLink>
+        <NavLink
+          to="/statistics"
+          className={({ isActive }) =>
+            `mx-6 px-2 py-2 font-medium transition-all border-b-2 ${isActive
+              ? 'text-green-700 border-green-600'
+              : 'text-gray-600 border-transparent hover:text-green-600 hover:border-green-300'
+            }`
+          }
+        >
+          Statistics
+        </NavLink>
+        <NavLink
+          to="/about"
+          className={({ isActive }) =>
+            `mx-6 px-2 py-2 font-medium transition-all border-b-2 ${isActive
+              ? 'text-green-700 border-green-600'
+              : 'text-gray-600 border-transparent hover:text-green-600 hover:border-green-300'
+            }`
+          }
+        >
+          About
+        </NavLink>
       </nav>
       <main>
         <Outlet context={{ model }} />

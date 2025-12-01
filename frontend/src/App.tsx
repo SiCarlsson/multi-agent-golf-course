@@ -6,7 +6,9 @@ import {
   Route,
   RouterProvider
 } from "react-router-dom"
+
 import AboutPresenter from "./presenters/AboutPresenter.tsx"
+import StatisticsPresenter from "./presenters/StatisticsPresenter.tsx"
 
 import RootLayout from "./layout/RootLayout"
 import GamePresenter from "./presenters/GamePresenter.tsx"
@@ -17,6 +19,7 @@ const App = observer(({ gameModel, courseData }: { gameModel: GameState, courseD
       <Route path="/" element={<RootLayout model={gameModel} />}>
         <Route index element={<GamePresenter courseData={courseData} />} />
         <Route path="about" element={<AboutPresenter />} />
+        <Route path="statistics" element={<StatisticsPresenter />} />
       </Route>
     )
   )
