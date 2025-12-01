@@ -13,29 +13,10 @@ def convert_coordinates_to_points(
     return [{"x": coord[0], "y": coord[1]} for coord in coordinates]
 
 
-def extract_geometry_coordinates(geojson_data: Dict[str, Any]) -> List[List[float]]:
-    """Extract coordinates from GeoJSON geometry, handling different geometry types."""
-    features = geojson_data.get("features", [])
-    all_coords = []
-
-    for feature in features:
-        geometry = feature.get("geometry", {})
-        coords = geometry.get("coordinates", [])
-        geom_type = geometry.get("type", "")
-
-        if geom_type == "Polygon":
-            if coords and len(coords) > 0:
-                all_coords.extend(coords[0])  # Take outer ring
-        elif geom_type == "MultiPolygon":
-            for polygon in coords:
-                if polygon and len(polygon) > 0:
-                    all_coords.extend(polygon[0])  # Take outer ring of each polygon
-
-    return all_coords
-
-
-def extract_all_polygons(geojson_data: Dict[str, Any]) -> List[List[List[float]]]:
-    """Extract all polygons separately from GeoJSON."""
+def extract_polygons(
+    geojson_data: Dict[str, Any], flatten: bool = False
+) -> List[List[float]] | List[List[List[float]]]:
+    """Extract polygon coordinates from GeoJSON geometry."""
     features = geojson_data.get("features", [])
     polygons = []
 
@@ -45,19 +26,24 @@ def extract_all_polygons(geojson_data: Dict[str, Any]) -> List[List[List[float]]
         geom_type = geometry.get("type", "")
 
         if geom_type == "Polygon":
-            if coords and len(coords) > 0:
-                polygons.append(coords[0])  # Take outer ring
+            polygons.append(coords[0])
         elif geom_type == "MultiPolygon":
             for polygon in coords:
-                if polygon and len(polygon) > 0:
-                    polygons.append(polygon[0])  # Take outer ring of each polygon
+                polygons.append(polygon[0])
 
+    if flatten:
+        coords = []
+        for polygon in polygons:
+            for coord in polygon:
+                coords.append(coord)
+        return coords
+    
     return polygons
 
 
 def convert_hole_data(hole_number: int) -> Dict[str, Any]:
     """Convert raw GeoJSON files for a hole to frontend format."""
-    raw_data_dir = Path(__file__).parent.parent / "data" / "geojson_raw"
+    raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
     hole_dir = raw_data_dir / f"hole_{hole_number:02d}"
 
     if not hole_dir.exists():
@@ -72,7 +58,7 @@ def convert_hole_data(hole_number: int) -> Dict[str, Any]:
             raise ValueError(f"Empty file: {fairway_path}")
         with open(fairway_path, "r") as f:
             fairway_geojson = json.load(f)
-        fairway_coords = extract_geometry_coordinates(fairway_geojson)
+        fairway_coords = extract_polygons(fairway_geojson, flatten=True)
         hole_data["fairway"] = convert_coordinates_to_points(fairway_coords)
 
     # Process green
@@ -82,7 +68,7 @@ def convert_hole_data(hole_number: int) -> Dict[str, Any]:
             raise ValueError(f"Empty file: {green_path}")
         with open(green_path, "r") as f:
             green_geojson = json.load(f)
-        green_coords = extract_geometry_coordinates(green_geojson)
+        green_coords = extract_polygons(green_geojson, flatten=True)
         hole_data["green"] = convert_coordinates_to_points(green_coords)
 
     # Process tees
@@ -92,7 +78,7 @@ def convert_hole_data(hole_number: int) -> Dict[str, Any]:
             raise ValueError(f"Empty file: {tees_path}")
         with open(tees_path, "r") as f:
             tees_geojson = json.load(f)
-        tees_polygons = extract_all_polygons(tees_geojson)
+        tees_polygons = extract_polygons(tees_geojson)
         hole_data["tees"] = [
             convert_coordinates_to_points(tee) for tee in tees_polygons
         ]
@@ -104,7 +90,7 @@ def convert_hole_data(hole_number: int) -> Dict[str, Any]:
             raise ValueError(f"Empty file: {bunkers_path}")
         with open(bunkers_path, "r") as f:
             bunkers_geojson = json.load(f)
-        bunkers_polygons = extract_all_polygons(bunkers_geojson)
+        bunkers_polygons = extract_polygons(bunkers_geojson)
         hole_data["bunkers"] = [
             convert_coordinates_to_points(bunker) for bunker in bunkers_polygons
         ]
@@ -122,14 +108,14 @@ def convert_hole_data(hole_number: int) -> Dict[str, Any]:
     output_file = output_dir / f"hole_{hole_number:02d}.json"
 
     with open(output_file, "w") as f:
-        json.dump(hole_data, f, indent=2)
+        json.dump(hole_data, f, indent=4)
 
     return hole_data
 
 
 def convert_all_holes() -> None:
     """Convert all available holes from raw GeoJSON to frontend format."""
-    raw_data_dir = Path(__file__).parent.parent / "data" / "geojson_raw"
+    raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
 
     hole_dirs = sorted(
         [d for d in raw_data_dir.iterdir() if d.is_dir() and d.name.startswith("hole_")]
@@ -143,7 +129,3 @@ def convert_all_holes() -> None:
         logger.info(f"Converted hole {hole_number}")
 
     logger.info(f"Successfully converted {converted_count} holes")
-
-
-if __name__ == "__main__":
-    convert_all_holes()
