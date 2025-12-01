@@ -27,16 +27,20 @@ app.add_middleware(
 )
 
 
-@app.get("/api/holes/{hole_number}")
-async def get_hole(hole_number: int):
-    """Fetch hole data by hole number."""
+@app.get("/api/holes")
+async def get_all_holes():
+    """Fetch all hole data."""
     course_data_dir = Path(__file__).parent / "data" / "course"
-    hole_file = course_data_dir / f"hole_{hole_number:02d}.json"
-
-    if not hole_file.exists():
-        raise HTTPException(status_code=404, detail=f"Hole {hole_number} not found")
-
-    with open(hole_file, "r") as f:
-        hole_data = json.load(f)
-
-    return hole_data
+    
+    holes = []
+    hole_files = sorted(course_data_dir.glob("hole_*.json"))
+    
+    if not hole_files:
+        raise HTTPException(status_code=404, detail="No holes found")
+    
+    for hole_file in hole_files:
+        with open(hole_file, "r") as f:
+            hole_data = json.load(f)
+            holes.append(hole_data)
+    
+    return {"holes": holes}

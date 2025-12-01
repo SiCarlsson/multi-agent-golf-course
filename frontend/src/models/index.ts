@@ -1,18 +1,19 @@
+import type { Hole } from "./courseModel";
+import type { Greenkeeper } from "./greenKeeperModel";
+import type { Player } from "./playerModel";
+import type { Weather } from "./weatherModel";
+
 export interface Point {
   x: number;
   y: number;
 }
 
-export interface Hole {
-  fairway: Point[];
-  green: Point[];
-  tees: Point[][];
-  flag: Point;
-  bunkers?: Point[][];
-  water?: Point[][];
+export interface GameState {
+  players: Player[];
+  greenkeepers: Greenkeeper[];
+  weather: Weather;
 }
 
-export interface Ball {
-  x: number;
-  y: number;
+export interface CourseData {
+  holes: Hole[];
 }
