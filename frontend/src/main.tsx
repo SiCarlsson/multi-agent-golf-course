@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { observable } from 'mobx'
+import { observable, runInAction } from 'mobx'
 import axios from 'axios'
 import type { CourseData, GameState } from './models/index.ts'
 import { API_BASE_URL } from './constants.ts'
@@ -21,7 +21,9 @@ const reactiveCourseData = observable<CourseData>(courseData);
 
 axios.get(`${API_BASE_URL}/api/holes`)
   .then(response => {
-    reactiveCourseData.holes = response.data.holes;
+    runInAction(() => {
+      reactiveCourseData.holes = response.data.holes;
+    });
   })
   .catch(error => console.error('Error fetching course data:', error));
 

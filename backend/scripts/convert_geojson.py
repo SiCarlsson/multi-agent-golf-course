@@ -2,15 +2,40 @@ import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from pyproj import Transformer
 
 logger = logging.getLogger(__name__)
+
+# Create transformer from WGS84 (lat/lon) to UTM Zone 33N (Sweden)
+# EPSG:4326 = WGS84 (latitude/longitude)
+# EPSG:32633 = WGS84 / UTM zone 33N
+transformer = Transformer.from_crs("EPSG:4326", "EPSG:32633", always_xy=True)
+
+_origin_utm = None
+
+
+def convert_lonlat_to_utm(lon: float, lat: float) -> tuple[float, float]:
+    """Convert longitude/latitude to UTM x/y in meters."""
+    return transformer.transform(lon, lat)
 
 
 def convert_coordinates_to_points(
     coordinates: List[List[float]],
 ) -> List[Dict[str, float]]:
-    """Convert GeoJSON coordinates [lon, lat] to frontend Point format {x, y}."""
-    return [{"x": coord[0], "y": coord[1]} for coord in coordinates]
+    """Convert GeoJSON coordinates [lon, lat] to frontend Point format {x, y} in meters."""
+    global _origin_utm
+
+    # Set origin from first coordinate if not already set
+    if _origin_utm is None and coordinates:
+        _origin_utm = convert_lonlat_to_utm(coordinates[0][0], coordinates[0][1])
+
+    points = []
+    for coord in coordinates:
+        x_utm, y_utm = convert_lonlat_to_utm(coord[0], coord[1])
+        # Convert to relative coordinates (meters from origin)
+        points.append({"x": x_utm - _origin_utm[0], "y": y_utm - _origin_utm[1]})
+
+    return points
 
 
 def extract_polygons(
@@ -37,12 +62,16 @@ def extract_polygons(
             for coord in polygon:
                 coords.append(coord)
         return coords
-    
+
     return polygons
 
 
 def convert_hole_data(hole_number: int) -> Dict[str, Any]:
     """Convert raw GeoJSON files for a hole to frontend format."""
+    global _origin_utm
+
+    _origin_utm = None
+
     raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
     hole_dir = raw_data_dir / f"hole_{hole_number:02d}"
 
