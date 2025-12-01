@@ -7,26 +7,29 @@ import { API_BASE_URL } from './constants.ts'
 import './index.css'
 import App from './App.tsx'
 
-const model: GameState = {
+const gameState: GameState = {
   players: [],
   greenkeepers: [],
   weather: { condition: 'sunny', wind: { direction: 0, speed: 0 } },
 }
+const reactiveGameState = observable<GameState>(gameState);
 
-const courseLayout: CourseData = {
+const courseData: CourseData = {
   holes: [],
 }
+const reactiveCourseData = observable<CourseData>(courseData);
 
-const reactiveModel = observable<GameState>(model);
-
-axios.get(`${API_BASE_URL}/api/holes/1`)
+axios.get(`${API_BASE_URL}/api/holes`)
   .then(response => {
-    courseLayout.holes = [response.data];
+    reactiveCourseData.holes = response.data.holes;
   })
   .catch(error => console.error('Error fetching course data:', error));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App reactiveModel={reactiveModel} />
+    <App
+      gameModel={reactiveGameState}
+      courseData={reactiveCourseData}
+    />
   </StrictMode>,
 )

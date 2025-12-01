@@ -1,8 +1,9 @@
+import type { CourseData } from '../models/index.ts'
 import GameView from '../views/GameView.tsx'
 
-const GamePresenter = () => {
+const GamePresenter = ({ courseData }: { courseData: CourseData }) => {
   return (
-    <GameView />
+    <GameView courseData={courseData} />
   )
 }
 
