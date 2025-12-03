@@ -4,10 +4,10 @@ import type { GameState } from "../models"
 const RootLayout = ({ model }: { model: GameState }) => {
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 to-emerald-100">
+    <div className="min-h-screen">
       <nav className="flex items-center justify-center relative h-26 bg-white border-b border-gray-200">
         <NavLink to="/" className="absolute left-4">
-          <img src="/Logotype.png" alt="Logo" className="h-24 mx-4" />
+          <img src="/Logotype.png" alt="Logo" className="h-24" />
         </NavLink>
         <NavLink
           to="/"

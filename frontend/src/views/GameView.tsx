@@ -122,12 +122,12 @@ const GameView = observer(({ courseData }: { courseData: CourseData }) => {
   }, [courseData, dimensions])
 
   return (
-    <div ref={containerRef} className="px-5 w-full">
+    <div ref={containerRef} className="px-5 pt-5 w-full">
       <canvas
         ref={canvasRef}
         width={dimensions.width}
         height={dimensions.height}
-        className="border border-gray-300 bg-green-50 w-full h-auto"
+        className="border border-gray-300 bg-emerald-900/80 w-full h-auto"
       />
     </div>
   )
