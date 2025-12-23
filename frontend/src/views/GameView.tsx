@@ -1,8 +1,8 @@
-import type { CourseData, Point } from "../models"
+import type { CourseData, GameState, Point } from "../models"
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
 
-const GameView = observer(({ courseData }: { courseData: CourseData }) => {
+const GameView = observer(({ courseData, gameState }: { courseData: CourseData, gameState: GameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
@@ -30,6 +30,7 @@ const GameView = observer(({ courseData }: { courseData: CourseData }) => {
     if (!ctx) return
 
     const hole = courseData.holes[0]
+    const player = gameState.players[0]
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -119,6 +120,32 @@ const GameView = observer(({ courseData }: { courseData: CourseData }) => {
       ctx.lineTo(flag.x, flag.y - 10)
       ctx.fill()
     }
+
+    // Players & Balls
+    if (player) {
+      // Player
+      ctx.fillStyle = "#1787ff"
+      ctx.beginPath()
+      const playerPos = transform(player.position)
+      ctx.arc(playerPos.x, playerPos.y, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = "#000000"
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // Ball
+      ctx.fillStyle = "#ffffff"
+      ctx.beginPath()
+      const ballPos = transform(player.ball.position)
+      ctx.arc(ballPos.x, ballPos.y, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = "#000000"
+      ctx.lineWidth = 1
+      ctx.stroke()
+    }
+
+
+    // Balls
   }, [courseData.holes.length, dimensions])
 
   return (

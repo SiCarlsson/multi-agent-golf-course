@@ -1,4 +1,4 @@
-import type { Hole } from "./courseModel";
+import type { Hole } from "./holeModel";
 import type { Greenkeeper } from "./greenKeeperModel";
 import type { Player } from "./playerModel";
 import type { Weather } from "./weatherModel";

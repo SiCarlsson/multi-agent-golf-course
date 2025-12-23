@@ -17,7 +17,7 @@ const App = observer(({ gameModel, courseData }: { gameModel: GameState, courseD
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout model={gameModel} />}>
-        <Route index element={<GamePresenter courseData={courseData} />} />
+        <Route index element={<GamePresenter courseData={courseData} gameState={gameModel} />} />
         <Route path="about" element={<AboutPresenter />} />
         <Route path="statistics" element={<StatisticsPresenter />} />
       </Route>
