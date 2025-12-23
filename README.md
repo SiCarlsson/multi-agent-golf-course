@@ -21,6 +21,43 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ---
 
+## **Getting Started**
+
+### Backend Setup
+1. Create and activate a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On macOS/Linux
+   # or
+   venv\Scripts\activate  # On Windows
+   ```
+
+2. Install Python dependencies:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+
+3. Start the backend server:
+   ```bash
+   uvicorn backend.main:app --reload
+   ```
+   The backend will run on `http://localhost:8000`
+
+### Frontend Setup
+1. Install Node dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The frontend will run on `http://localhost:5173`
+
+---
+
 ## **Frontend Architecture / MVP Structure**
 
 - **Model**
