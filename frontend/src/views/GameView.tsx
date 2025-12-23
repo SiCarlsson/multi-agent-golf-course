@@ -119,7 +119,7 @@ const GameView = observer(({ courseData }: { courseData: CourseData }) => {
       ctx.lineTo(flag.x, flag.y - 10)
       ctx.fill()
     }
-  }, [courseData, dimensions])
+  }, [courseData.holes.length, dimensions])
 
   return (
     <div ref={containerRef} className="px-5 pt-5 w-full">

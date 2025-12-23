@@ -5,11 +5,13 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 ---
 
 ### Frontend (React + TypeScript)
+
 - **React + TypeScript** – component-based, type-safe
 - **TailwindCSS** – HUD, scoreboards, buttons, and panels
 - **Canvas 2D API** – draws fairways, greens, sand, water, players, balls, and weather
 
 ### Backend (Python)
+
 - **Python**
 - **FastAPI** – REST and WebSocket API
   - **Communication**: JSON via WebSocket
@@ -24,7 +26,9 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 ## **Getting Started**
 
 ### Backend Setup
+
 1. Create and activate a virtual environment (recommended):
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On macOS/Linux
@@ -33,6 +37,7 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
    ```
 
 2. Install Python dependencies:
+
    ```bash
    pip install -r backend/requirements.txt
    ```
@@ -44,7 +49,9 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
    The backend will run on `http://localhost:8000`
 
 ### Frontend Setup
+
 1. Install Node dependencies:
+
    ```bash
    cd frontend
    npm install
