@@ -4,16 +4,17 @@ import type { Player } from "./playerModel";
 import type { Weather } from "./weatherModel";
 
 export interface Point {
-  x: number;
-  y: number;
+	x: number;
+	y: number;
 }
 
 export interface GameState {
-  players: Player[];
-  greenkeepers: Greenkeeper[];
-  weather: Weather;
+	players: Player[];
+	greenkeepers: Greenkeeper[];
+	weather: Weather;
+	lastUpdate: number;
 }
 
 export interface CourseData {
-  holes: Hole[];
+	holes: Hole[];
 }

@@ -121,13 +121,13 @@ const GameView = observer(({ courseData, gameState }: { courseData: CourseData, 
       ctx.fill()
     }
 
-    // Players & Balls
     if (player) {
+      const ballPos = transform(player.ball.position)
+
       // Player
       ctx.fillStyle = "#1787ff"
       ctx.beginPath()
-      const playerPos = transform(player.position)
-      ctx.arc(playerPos.x, playerPos.y, 5, 0, Math.PI * 2)
+      ctx.arc(ballPos.x, ballPos.y, 7, 0, Math.PI * 2)
       ctx.fill()
       ctx.strokeStyle = "#000000"
       ctx.lineWidth = 2
@@ -136,17 +136,13 @@ const GameView = observer(({ courseData, gameState }: { courseData: CourseData, 
       // Ball
       ctx.fillStyle = "#ffffff"
       ctx.beginPath()
-      const ballPos = transform(player.ball.position)
-      ctx.arc(ballPos.x, ballPos.y, 3, 0, Math.PI * 2)
+      ctx.arc(ballPos.x, ballPos.y, 4, 0, Math.PI * 2)
       ctx.fill()
       ctx.strokeStyle = "#000000"
-      ctx.lineWidth = 1
+      ctx.lineWidth = 2
       ctx.stroke()
     }
-
-
-    // Balls
-  }, [courseData.holes.length, dimensions])
+  }, [courseData.holes.length, dimensions, gameState.lastUpdate])
 
   return (
     <div ref={containerRef} className="px-5 pt-5 w-full">
