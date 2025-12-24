@@ -24,20 +24,29 @@ interface BackendGameState {
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   const [courseData] = useState(() => observable<CourseData>({ holes: [] }));
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch course data once
-    axios.get(`${API_BASE_URL}/api/holes`)
-      .then(response => {
-        runInAction(() => {
-          courseData.holes = response.data.holes;
+    const fetchCourseData = () => {
+      axios.get(`${API_BASE_URL}/api/holes`)
+        .then(response => {
+          runInAction(() => {
+            courseData.holes = response.data.holes;
+          });
+          setErrorMessage(null);
+        })
+        .catch(error => {
+          setErrorMessage(`Backend connection failed: ${error.message}`);
         });
-      })
-      .catch(error => console.error('Error fetching course data:', error));
+    };
 
     const fetchGameState = () => {
       axios.get<BackendGameState>(`${API_BASE_URL}/api/gamestate`)
         .then(response => {
+          setErrorMessage(null);
+          if (courseData.holes.length === 0) {
+            fetchCourseData();
+          }
           runInAction(() => {
             // Transform backend structure to frontend structure
             const backendData = response.data;
@@ -55,9 +64,12 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
             gameState.lastUpdate = Date.now();
           });
         })
-        .catch(error => console.error('Error fetching game state:', error));
+        .catch(error => {
+          setErrorMessage(`Backend connection failed: ${error.message}`);
+        });
     };
 
+    fetchCourseData();
     fetchGameState();
     const intervalId = setInterval(fetchGameState, GAMESTATE_POLL_INTERVAL_SECONDS * 1000);
 
@@ -65,7 +77,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   }, [gameState]);
 
   return (
-    <GameView courseData={courseData} gameState={gameState} />
+    <GameView courseData={courseData} gameState={gameState} errorMessage={errorMessage} />
   )
 }
 

@@ -2,7 +2,7 @@ import type { CourseData, GameState, Point } from "../models"
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
 
-const GameView = observer(({ courseData, gameState }: { courseData: CourseData, gameState: GameState }) => {
+const GameView = observer(({ courseData, gameState, errorMessage }: { courseData: CourseData, gameState: GameState, errorMessage: string | null }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
@@ -24,15 +24,30 @@ const GameView = observer(({ courseData, gameState }: { courseData: CourseData, 
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !courseData.holes.length) return
+    if (!canvas) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Display error message if present
+    if (errorMessage) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)"
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.fillStyle = "#ffffff"
+      ctx.font = "24px system-ui, -apple-system, sans-serif"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(errorMessage, canvas.width / 2, canvas.height / 2)
+      return
+    }
+
+    if (!courseData.holes.length) return
+
     const hole = courseData.holes[0]
     const player = gameState.players[0]
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // Calculate bounds to fit the hole on screen
     const allPoints: Point[] = [
@@ -142,7 +157,7 @@ const GameView = observer(({ courseData, gameState }: { courseData: CourseData, 
       ctx.lineWidth = 2
       ctx.stroke()
     }
-  }, [courseData.holes.length, dimensions, gameState.lastUpdate])
+  }, [courseData.holes.length, dimensions, gameState.lastUpdate, errorMessage])
 
   return (
     <div ref={containerRef} className="px-5 pt-5 w-full">
