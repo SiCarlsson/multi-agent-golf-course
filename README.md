@@ -13,13 +13,12 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 ### Backend (Python)
 
 - **Python**
-- **FastAPI** – REST and WebSocket API
-  - **Communication**: JSON via WebSocket
-- **Multi-agent simulation**:
-  - Players
-  - Wind agent
-  - Weather agent (per hole)
-  - Greenkeepers
+- **FastAPI** – REST API
+  - **Communication**: JSON via HTTP polling (WebSocket support planned)
+- **Multi-agent simulation** (in development):
+  - Player agents
+  - Greenkeeper agents
+  - Weather system
 
 ---
 
