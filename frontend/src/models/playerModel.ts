@@ -8,7 +8,6 @@ export interface Player {
   currentHole: number;
   startTime: string;
   stopTime?: string[];
-  state: 'waiting for greenkeeper' | 'waiting for others' | 'queuing' | 'aiming' | 'swinging' | 'finished';
 }
 
 export interface Ball {

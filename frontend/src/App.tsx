@@ -1,4 +1,4 @@
-import type { CourseData, GameState } from "./models"
+import type { GameState } from "./models"
 import { observer } from "mobx-react-lite"
 import {
   createBrowserRouter,
@@ -13,11 +13,11 @@ import StatisticsPresenter from "./presenters/StatisticsPresenter.tsx"
 import RootLayout from "./layout/RootLayout"
 import GamePresenter from "./presenters/GamePresenter.tsx"
 
-const App = observer(({ gameModel, courseData }: { gameModel: GameState, courseData: CourseData }) => {
+const App = observer(({ gameModel }: { gameModel: GameState }) => {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout model={gameModel} />}>
-        <Route index element={<GamePresenter courseData={courseData} gameState={gameModel} />} />
+        <Route index element={<GamePresenter gameState={gameModel} />} />
         <Route path="about" element={<AboutPresenter />} />
         <Route path="statistics" element={<StatisticsPresenter />} />
       </Route>
