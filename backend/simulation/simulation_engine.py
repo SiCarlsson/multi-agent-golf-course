@@ -38,21 +38,25 @@ class SimulationEngine:
             if not group.is_complete:
                 hole_data = self.holes[group.current_hole_number]
 
-                group.set_current_turn_index(hole_data)
-                player = group.players[group.current_turn_index]
-
-                if not player.is_complete:
-                    shot_result = player.take_shot(hole_data)
-                    logger.info(
-                        f"Player {player.id} took shot {shot_result['stroke_number']}"
-                    )
+                if not group.are_all_players_at_ball():
+                    group.walk_all_players_to_balls()
+                    logger.info(f"Group {group.group_id} players walking to balls")
                 else:
-                    logger.info(
-                        f"Player {player.id} has completed hole {group.current_hole_number}."
-                    )
+                    group.set_current_turn_index(hole_data)
+                    player = group.players[group.current_turn_index]
 
-                if all(p.is_complete for p in group.players):
-                    self._advance_group_to_next_hole(group)
+                    if not player.is_complete:
+                        shot_result = player.take_shot(hole_data)
+                        logger.info(
+                            f"Player {player.id} took shot {shot_result['stroke_number']}"
+                        )
+                    else:
+                        logger.info(
+                            f"Player {player.id} has completed hole {group.current_hole_number}."
+                        )
+
+                    if all(p.is_complete for p in group.players):
+                        self._advance_group_to_next_hole(group)
 
         return self.get_state()
 
@@ -66,9 +70,12 @@ class SimulationEngine:
             )
             for player in group.players:
                 player.is_complete = False
-                player.position = self.get_tee_position(
+                tee_pos = self.get_tee_position(
                     self.holes[group.current_hole_number]["tees"][0]
                 )
+                player.player_position = tee_pos
+                player.ball_position = tee_pos.copy()
+                player.state = "idle"
                 player.strokes = 0
         else:
             group.is_complete = True

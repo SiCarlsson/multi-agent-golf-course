@@ -52,9 +52,11 @@ async def lifespan(app: FastAPI):
     player = PlayerAgent(id=1, accuracy=0.8, strength=0.9)
     group = PlayerGroup(id=1, players=[player], starting_hole=1, tee_time=0)
 
-    # Position player at tee
+    # Position player and ball at tee
     tee_box = simulation_engine.holes[1]["tees"][0]
-    player.position = simulation_engine.get_tee_position(tee_box)
+    tee_position = simulation_engine.get_tee_position(tee_box)
+    player.player_position = tee_position
+    player.ball_position = tee_position.copy()
 
     simulation_engine.player_groups.append(group)
 
@@ -71,7 +73,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Configure CORS
-# TODO: UPDATE LATER
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],

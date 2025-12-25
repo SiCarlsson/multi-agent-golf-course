@@ -24,10 +24,24 @@ class PlayerGroup:
 
         for i, player in enumerate(self.players):
             if not player.is_complete:
-                distance_to_pin = Calculations.get_distance(player.position, pin_position)
+                distance_to_pin = Calculations.get_distance(player.ball_position, pin_position)
 
                 if distance_to_pin > max_distance:
                     max_distance = distance_to_pin
                     next_player_index = i
 
         self.current_turn_index = next_player_index
+    
+    def are_all_players_at_ball(self) -> bool:
+        """Check if all players have finished walking to their balls."""
+        return all(
+            player.state == "idle" or player.is_complete 
+            for player in self.players
+        )
+    
+    def walk_all_players_to_balls(self):
+        """Move all players one step towards their balls."""
+        for player in self.players:
+            if not player.is_complete:
+                player.walk_to_ball()
+

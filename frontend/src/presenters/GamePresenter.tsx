@@ -8,8 +8,10 @@ import type { CourseData, GameState, Point } from '../models/index.ts'
 interface BackendPlayer {
   id: number;
   position: Point;
+  ball_position: Point;
   strokes: number;
   current_lie: string;
+  state: string;
 }
 
 interface BackendGroup {
@@ -53,7 +55,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
             const allPlayers = backendData.groups.flatMap((group) =>
               group.players.map((player) => ({
                 id: player.id,
-                ball: { position: player.position },
+                ball: { position: player.ball_position },
                 score: player.strokes,
                 position: player.position,
                 currentHole: group.current_hole,

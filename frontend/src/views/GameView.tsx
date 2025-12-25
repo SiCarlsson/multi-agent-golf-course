@@ -137,12 +137,13 @@ const GameView = observer(({ courseData, gameState, errorMessage }: { courseData
     }
 
     if (player) {
+      const playerPos = transform(player.position)
       const ballPos = transform(player.ball.position)
 
       // Player
       ctx.fillStyle = "#1787ff"
       ctx.beginPath()
-      ctx.arc(ballPos.x, ballPos.y, 7, 0, Math.PI * 2)
+      ctx.arc(playerPos.x, playerPos.y, 7, 0, Math.PI * 2)
       ctx.fill()
       ctx.strokeStyle = "#000000"
       ctx.lineWidth = 2
