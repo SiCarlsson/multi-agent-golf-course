@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
     simulation_engine = SimulationEngine()
 
     # Sample player and group
-    player = PlayerAgent(id=1, accuracy=0.8, strength=0.9)
+    player = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
     group = PlayerGroup(id=1, players=[player], starting_hole=1, tee_time=0)
 
     # Position player and ball at tee
@@ -80,7 +80,6 @@ async def lifespan(app: FastAPI):
 
     simulation_engine.player_groups.append(group)
 
-    # Start background simulation task
     simulation_task = asyncio.create_task(run_simulation())
 
     yield

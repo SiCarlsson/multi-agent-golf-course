@@ -1,7 +1,13 @@
 import math
+import random
 from typing import Dict, Any
 
-from ..constants import WALKING_SPEED, HOLE_COMPLETION_DISTANCE, SHOT_TAKING_DISTANCE
+from ..constants import (
+    WALKING_SPEED,
+    HOLE_COMPLETION_DISTANCE,
+    SHOT_TAKING_DISTANCE,
+)
+from .shot_utility import ShotUtility
 from ..utils.calculations import Calculations
 
 
@@ -21,29 +27,41 @@ class PlayerAgent:
         self.is_complete = False
 
         self.state = "idle"
-        self.walking_progress = 0.0  # 0 to 1 when walking to ball
+        self.walking_progress = 0.0
 
     def take_shot(self, hole_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute one shot."""
+        """Execute one shot using utility-based decision making."""
         self.strokes += 1
         self.state = "hitting"
 
         flag = hole_data["flag"]
-        distance_to_flag = Calculations.get_distance(self.ball_position, flag)
-        direction_to_flag = Calculations.get_direction(self.ball_position, flag)
 
-        max_shot_distance = self._get_max_shot_distance(distance_to_flag)
-        intended_power = min(max_shot_distance, distance_to_flag)
-
-        # TODO: Implement actual_direction variation
-        # TODO: Implement actual_power variation
-
-        old_ball_position = self.ball_position.copy()
-        self.ball_position = self._get_new_ball_position(
-            intended_power, direction_to_flag
+        best_shot = ShotUtility.select_best_shot(
+            self.ball_position, self.current_lie, self.strength, hole_data
         )
 
-        self.current_lie = self._determine_lie(self.ball_position, hole_data)
+        club = best_shot["club"]
+        power = best_shot["power"]
+        direction = best_shot["direction"]
+
+        inaccuracy = 1.0 - self.accuracy
+
+        distance_spread = 0.05 + (inaccuracy * 0.15)
+        actual_power = power * (1 + random.uniform(-distance_spread, distance_spread))
+
+        direction_spread = 0.035 + (inaccuracy * 0.335)
+        actual_direction = direction + random.uniform(
+            -direction_spread, direction_spread
+        )
+
+        old_ball_position = self.ball_position.copy()
+
+        self.ball_position = {
+            "x": self.ball_position["x"] + actual_power * math.cos(actual_direction),
+            "y": self.ball_position["y"] + actual_power * math.sin(actual_direction),
+        }
+
+        self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data)
 
         self.state = "waiting"
         self.walking_progress = 0.0
@@ -58,18 +76,18 @@ class PlayerAgent:
             "stroke_number": self.strokes,
             "old_position": old_ball_position,
             "new_position": self.ball_position,
-            "distance_traveled": intended_power,
+            "distance_traveled": power,
             "distance_to_flag": new_distance_to_flag,
             "is_complete": self.is_complete,
+            "club_used": club,
         }
 
     def walk_to_ball(self) -> bool:
         """
         Move player towards ball. Returns True when reached.
-        Call this each tick until player reaches ball.
         """
         if self.state != "walking" and self.state != "waiting":
-            return True  # Already at ball
+            return True
 
         distance = Calculations.get_distance(self.player_position, self.ball_position)
 
@@ -79,18 +97,15 @@ class PlayerAgent:
             self.walking_progress = 1.0
             return True
 
-        # Start walking if just waiting
         if self.state == "waiting":
             self.state = "walking"
 
-        # Walk at configured speed
         direction = Calculations.get_direction(self.player_position, self.ball_position)
 
         move_distance = min(WALKING_SPEED, distance)
         self.player_position["x"] += move_distance * math.cos(direction)
         self.player_position["y"] += move_distance * math.sin(direction)
 
-        # Update progress
         total_distance = Calculations.get_distance(
             {
                 "x": self.player_position["x"] - move_distance * math.cos(direction),
@@ -117,42 +132,3 @@ class PlayerAgent:
             "current_lie": self.current_lie,
             "state": self.state,
         }
-
-    def _get_max_shot_distance(self, distance_to_hole):
-        """Get how far the player can hit."""
-        base_max = 220  # meters (driver distance)
-
-        if distance_to_hole < 200:
-            return distance_to_hole * 1.1  # Slight overshoot possible
-
-        return base_max * self.strength
-
-    def _get_new_ball_position(
-        self, power: float, direction: float
-    ) -> Dict[str, float]:
-        """Calculate new ball position based on shot power and direction."""
-        new_x = self.ball_position["x"] + power * math.cos(direction)
-        new_y = self.ball_position["y"] + power * math.sin(direction)
-
-        return {"x": new_x, "y": new_y}
-
-    def _determine_lie(
-        self, position: Dict[str, float], hole_data: Dict[str, Any]
-    ) -> str:
-        """Determine what type of lie the ball is in."""
-        if "green" in hole_data and Calculations.point_in_polygon(
-            position, hole_data["green"]
-        ):
-            return "green"
-
-        if "bunkers" in hole_data:
-            for bunker in hole_data["bunkers"]:
-                if Calculations.point_in_polygon(position, bunker):
-                    return "bunker"
-
-        if "fairway" in hole_data and Calculations.point_in_polygon(
-            position, hole_data["fairway"]
-        ):
-            return "fairway"
-
-        return "rough"
