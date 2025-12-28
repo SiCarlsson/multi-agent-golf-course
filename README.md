@@ -7,14 +7,15 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 ### Frontend (React + TypeScript)
 
 - **React + TypeScript** – component-based, type-safe
+- **Node.js** with **Vite** – fast build tooling and development server
 - **TailwindCSS** – HUD, scoreboards, buttons, and panels
-- **Canvas 2D API** – draws fairways, greens, sand, water, players, balls, and weather
+- **HTML5 Canvas** – draws fairways, greens, sand, water, players, balls, and weather
 
 ### Backend (Python)
 
 - **Python**
-- **FastAPI** – REST API
-  - **Communication**: JSON via HTTP polling (WebSocket support planned)
+- **FastAPI** – WebSocket API
+  - **Communication**: Real-time updates via WebSocket connections
 - **Multi-agent simulation** (in development):
   - Player agents
   - Greenkeeper agents

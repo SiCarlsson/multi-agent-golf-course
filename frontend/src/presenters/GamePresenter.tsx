@@ -1,8 +1,7 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { runInAction, observable } from 'mobx'
+import { runInAction } from 'mobx'
 import GameView from '../views/GameView.tsx'
-import { API_BASE_URL, GAMESTATE_POLL_INTERVAL_SECONDS } from '../constants.ts'
+import { WS_BASE_URL } from '../constants.ts'
 import type { CourseData, GameState, Point } from '../models/index.ts'
 
 interface BackendPlayer {
@@ -12,7 +11,7 @@ interface BackendPlayer {
   strokes: number;
   current_lie: string;
   state: string;
-}
+} 
 
 interface BackendGroup {
   current_hole: number;
@@ -25,57 +24,79 @@ interface BackendGameState {
 }
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
-  const [courseData] = useState(() => observable<CourseData>({ holes: [] }));
+  const [courseData, setCourseData] = useState<CourseData>({ holes: [] });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCourseData = () => {
-      axios.get(`${API_BASE_URL}/api/holes`)
-        .then(response => {
-          runInAction(() => {
-            courseData.holes = response.data.holes;
-          });
-          setErrorMessage(null);
-        })
-        .catch(error => {
-          setErrorMessage(`Backend connection failed: ${error.message}`);
-        });
-    };
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: number | null = null;
 
-    const fetchGameState = () => {
-      axios.get<BackendGameState>(`${API_BASE_URL}/api/gamestate`)
-        .then(response => {
+    const connectWebSocket = () => {
+      try {
+        ws = new WebSocket(`${WS_BASE_URL}/ws`);
+
+        ws.onopen = () => {
+          console.log('WebSocket connected');
           setErrorMessage(null);
-          if (courseData.holes.length === 0) {
-            fetchCourseData();
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data)
+            
+            if (message.type === 'course_data') {
+              setCourseData({ holes: message.data.holes });
+            } else if (message.type === 'gamestate') {
+              runInAction(() => {
+                // Transform backend structure to frontend structure
+                const backendData = message.data as BackendGameState;
+                const allPlayers = backendData.groups.flatMap((group) =>
+                  group.players.map((player) => ({
+                    id: player.id,
+                    ball: { position: player.ball_position },
+                    score: player.strokes,
+                    position: player.position,
+                    currentHole: group.current_hole,
+                    startTime: new Date().toISOString()
+                  }))
+                );
+                gameState.players = allPlayers;
+                gameState.lastUpdate = Date.now();
+              });
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
           }
-          runInAction(() => {
-            // Transform backend structure to frontend structure
-            const backendData = response.data;
-            const allPlayers = backendData.groups.flatMap((group) =>
-              group.players.map((player) => ({
-                id: player.id,
-                ball: { position: player.ball_position },
-                score: player.strokes,
-                position: player.position,
-                currentHole: group.current_hole,
-                startTime: new Date().toISOString()
-              }))
-            );
-            gameState.players = allPlayers;
-            gameState.lastUpdate = Date.now();
-          });
-        })
-        .catch(error => {
-          setErrorMessage(`Backend connection failed: ${error.message}`);
-        });
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setErrorMessage('WebSocket connection error');
+        };
+
+        ws.onclose = () => {
+          console.log('WebSocket disconnected');
+          setErrorMessage('Backend connection lost. Reconnecting...');
+          // Attempt to reconnect after 3 seconds
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        setErrorMessage(`Backend connection failed: ${error}`);
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+      }
     };
 
-    fetchCourseData();
-    fetchGameState();
-    const intervalId = setInterval(fetchGameState, GAMESTATE_POLL_INTERVAL_SECONDS * 1000);
+    connectWebSocket();
 
-    return () => clearInterval(intervalId);
+    return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (ws) {
+        ws.close();
+      }
+    };
   }, [gameState]);
 
   return (
