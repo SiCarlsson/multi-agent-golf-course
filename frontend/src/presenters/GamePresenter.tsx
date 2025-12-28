@@ -25,7 +25,7 @@ interface BackendGameState {
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   const [courseData, setCourseData] = useState<CourseData>({ holes: [] });
-  const [tickInterval, setTickInterval] = useState<number>(0);
+  const [tickIntervalSeconds, setTickIntervalSeconds] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
 
             if (message.type === 'course_data') {
               setCourseData({ holes: message.data.holes });
-              setTickInterval(message.data.tick_interval);
+              setTickIntervalSeconds(message.data.tick_interval);
             } else if (message.type === 'gamestate') {
               runInAction(() => {
                 // Transform backend structure to frontend structure
@@ -102,7 +102,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   }, [gameState]);
 
   return (
-    <GameView courseData={courseData} gameState={gameState} errorMessage={errorMessage} tickInterval={tickInterval} />
+    <GameView courseData={courseData} gameState={gameState} errorMessage={errorMessage} tickIntervalSeconds={tickIntervalSeconds} />
   )
 }
 

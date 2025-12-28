@@ -1,7 +1,7 @@
 ### Simulation constants
 
 # Time between simulation ticks in seconds
-TICK_INTERVAL_SECONDS = 1.0
+TICK_INTERVAL_SECONDS = 5.0
 
 # Player walking speed in meters per tick
 WALKING_SPEED = 30.0
