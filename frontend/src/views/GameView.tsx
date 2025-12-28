@@ -1,8 +1,8 @@
-import type { CourseData, GameState, Point } from "../models"
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
+import type { CourseData, GameState, Point } from "../models"
 
-const GameView = observer(({ courseData, gameState, errorMessage }: { courseData: CourseData, gameState: GameState, errorMessage: string | null }) => {
+const GameView = observer(({ courseData, gameState, errorMessage, tickInterval }: { courseData: CourseData, gameState: GameState, errorMessage: string | null, tickInterval: number }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
@@ -31,7 +31,6 @@ const GameView = observer(({ courseData, gameState, errorMessage }: { courseData
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Display error message if present
     if (errorMessage) {
       ctx.fillStyle = "rgba(0, 0, 0, 0.8)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)

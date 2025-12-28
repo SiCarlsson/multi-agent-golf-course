@@ -1,3 +1,4 @@
+import time
 import json
 import asyncio
 import logging
@@ -110,7 +111,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 holes.append(hole_data)
 
         await websocket.send_text(
-            json.dumps({"type": "course_data", "data": {"holes": holes}})
+            json.dumps({
+                "type": "course_data", 
+                "data": {
+                    "holes": holes,
+                    "tick_interval": TICK_INTERVAL_SECONDS
+                }
+            })
         )
 
         if simulation_engine:

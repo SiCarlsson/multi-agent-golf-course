@@ -11,7 +11,7 @@ interface BackendPlayer {
   strokes: number;
   current_lie: string;
   state: string;
-} 
+}
 
 interface BackendGroup {
   current_hole: number;
@@ -25,6 +25,7 @@ interface BackendGameState {
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   const [courseData, setCourseData] = useState<CourseData>({ holes: [] });
+  const [tickInterval, setTickInterval] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,9 +44,10 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data)
-            
+
             if (message.type === 'course_data') {
               setCourseData({ holes: message.data.holes });
+              setTickInterval(message.data.tick_interval);
             } else if (message.type === 'gamestate') {
               runInAction(() => {
                 // Transform backend structure to frontend structure
@@ -100,7 +102,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
   }, [gameState]);
 
   return (
-    <GameView courseData={courseData} gameState={gameState} errorMessage={errorMessage} />
+    <GameView courseData={courseData} gameState={gameState} errorMessage={errorMessage} tickInterval={tickInterval} />
   )
 }
 
