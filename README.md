@@ -25,6 +25,14 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ## **Getting Started**
 
+### Quick Start
+
+Once dependencies are installed, run both servers simultaneously:
+
+```bash
+make dev
+```
+
 ### Backend Setup
 
 1. Create and activate a virtual environment (recommended):
