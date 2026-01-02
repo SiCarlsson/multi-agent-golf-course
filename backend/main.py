@@ -1,4 +1,3 @@
-import time
 import json
 import asyncio
 import logging
@@ -128,7 +127,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 json.dumps({"type": "gamestate", "data": game_state})
             )
 
-        # Keep connection alive and listen for messages
         while True:
             data = await websocket.receive_text()
             logger.info(f"Received message from client: {data}")

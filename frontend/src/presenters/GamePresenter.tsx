@@ -95,7 +95,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
-      if (ws) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
     };
