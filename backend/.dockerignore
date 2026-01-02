@@ -1,0 +1,9 @@
+# Default Python ignores
+__pycache__
+*.pyc
+venv
+env
+.venv
+.git
+.DS_Store
+.env

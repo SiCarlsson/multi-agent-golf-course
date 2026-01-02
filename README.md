@@ -25,7 +25,27 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ## **Getting Started**
 
-### Quick Start
+### Quick Start with Docker (Recommended)
+
+The easiest way to run the entire application:
+
+```bash
+make docker-up
+```
+
+The application will be available at:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+
+**Docker Commands:**
+
+```bash
+make docker-up         # Start containers
+make docker-down       # Stop containers
+make docker-rebuild    # Rebuild without cache
+```
+
+### Quick Start (Local Development)
 
 Once dependencies are installed, run both servers simultaneously:
 
