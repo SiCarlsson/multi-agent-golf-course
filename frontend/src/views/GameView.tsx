@@ -97,15 +97,13 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         return
       }
 
-      const hole = courseData.holes[0]
-
-      // Calculate bounds to fit the hole on screen
-      const allPoints: Point[] = [
+      // Calculate bounds across ALL holes to display entire course
+      const allPoints: Point[] = courseData.holes.flatMap(hole => [
         ...hole.fairway,
         ...hole.green,
         ...hole.tees.flat(),
         ...(hole.bunkers?.flat() || []),
-      ]
+      ])
 
       const minX = Math.min(...allPoints.map(p => p.x))
       const maxX = Math.max(...allPoints.map(p => p.x))
@@ -121,7 +119,6 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         (canvas.height - padding * 2) / courseHeight
       )
 
-      // Transform function to map course coordinates to canvas coordinates
       const transform = (point: Point): Point => ({
         x: (point.x - minX) * scale + padding,
         y: canvas.height - ((point.y - minY) * scale + padding)
@@ -150,53 +147,72 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         }
       }
 
-      drawPolygon(hole.fairway, "#8fbc8f", "#6b8e6b")
+      // Draw all holes
+      courseData.holes.forEach((hole, index) => {
+        const holeNumber = index + 1
 
-      hole.bunkers?.forEach(bunker => {
-        drawPolygon(bunker, "#f4e4c1", "#d4c4a1")
+        // Draw course elements
+        drawPolygon(hole.fairway, "#8fbc8f", "#6b8e6b")
+
+        hole.bunkers?.forEach(bunker => {
+          drawPolygon(bunker, "#f4e4c1", "#d4c4a1")
+        })
+
+        drawPolygon(hole.green, "#228b22", "#1a6b1a")
+
+        hole.tees.forEach(tee => {
+          drawPolygon(tee, "#90ee90", "#70ce70")
+        })
+
+        if (hole.flag) {
+          const flag = transform(hole.flag)
+          ctx.fillStyle = "#ff0000"
+          ctx.beginPath()
+          ctx.arc(flag.x, flag.y, 5, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Flag pole
+          ctx.strokeStyle = "#000000"
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(flag.x, flag.y)
+          ctx.lineTo(flag.x, flag.y - 20)
+          ctx.stroke()
+
+          // Flag
+          ctx.fillStyle = "#ff0000"
+          ctx.beginPath()
+          ctx.moveTo(flag.x, flag.y - 20)
+          ctx.lineTo(flag.x + 15, flag.y - 15)
+          ctx.lineTo(flag.x, flag.y - 10)
+          ctx.fill()
+
+          // Draw hole number near flag
+          ctx.fillStyle = "#ffffff"
+          ctx.font = "bold 14px system-ui, -apple-system, sans-serif"
+          ctx.textAlign = "center"
+          ctx.strokeStyle = "#000000"
+          ctx.lineWidth = 3
+          ctx.strokeText(`${holeNumber}`, flag.x, flag.y - 25)
+          ctx.fillText(`${holeNumber}`, flag.x, flag.y - 25)
+        }
+
       })
-
-      drawPolygon(hole.green, "#228b22", "#1a6b1a")
-
-      hole.tees.forEach(tee => {
-        drawPolygon(tee, "#90ee90", "#70ce70")
-      })
-
-      if (hole.flag) {
-        const flag = transform(hole.flag)
-        ctx.fillStyle = "#ff0000"
-        ctx.beginPath()
-        ctx.arc(flag.x, flag.y, 5, 0, Math.PI * 2)
-        ctx.fill()
-
-        // Flag pole
-        ctx.strokeStyle = "#000000"
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.moveTo(flag.x, flag.y)
-        ctx.lineTo(flag.x, flag.y - 20)
-        ctx.stroke()
-
-        // Flag
-        ctx.fillStyle = "#ff0000"
-        ctx.beginPath()
-        ctx.moveTo(flag.x, flag.y - 20)
-        ctx.lineTo(flag.x + 15, flag.y - 15)
-        ctx.lineTo(flag.x, flag.y - 10)
-        ctx.fill()
-      }
 
       const calculatePositionBetween = (start: Point, end: Point, progress: number): Point => ({
         x: start.x + (end.x - start.x) * progress,
         y: start.y + (end.y - start.y) * progress
       })
 
-      for (const [playerId, targetPos] of targetPositionsRef.current.entries()) {
-        const prevPos = previousPositionsRef.current.get(playerId)
-        if (!prevPos) continue
+      // Draw all players
+      gameState.players.forEach(player => {
+        const targetPos = targetPositionsRef.current.get(player.id)
+        if (!targetPos) return
 
-        // Calculate interpolation independently for each player
-        const lastUpdateTime = lastUpdateTimeRef.current.get(playerId) || Date.now()
+        const prevPos = previousPositionsRef.current.get(player.id)
+        if (!prevPos) return
+
+        const lastUpdateTime = lastUpdateTimeRef.current.get(player.id) || Date.now()
         const elapsedSecondsSinceUpdate = (Date.now() - lastUpdateTime) / 1000
         const playerInterpolationFactor = tickIntervalSeconds > 0
           ? Math.min(elapsedSecondsSinceUpdate / tickIntervalSeconds, 1)
@@ -234,7 +250,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         ctx.strokeStyle = "#000000"
         ctx.lineWidth = 2
         ctx.stroke()
-      }
+      })
 
       animationFrameRef.current = requestAnimationFrame(animate)
     }
