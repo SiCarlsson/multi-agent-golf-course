@@ -12,7 +12,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
   const animationFrameRef = useRef<number | null>(null)
   const previousPositionsRef = useRef<Map<number, { position: Point, ball: Point }>>(new Map())
   const targetPositionsRef = useRef<Map<number, { position: Point, ball: Point }>>(new Map())
-  const lastUpdateTimeRef = useRef<number>(Date.now())
+  const lastUpdateTimeRef = useRef<Map<number, number>>(new Map())
 
   useEffect(() => {
     if (!gameState.lastUpdate) return
@@ -20,13 +20,18 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
     gameState.players.forEach(player => {
       const currentTarget = targetPositionsRef.current.get(player.id)
 
-      const positionChanged = !currentTarget ||
+      // Check if player position changed
+      const playerPositionChanged = !currentTarget ||
         currentTarget.position.x !== player.position.x ||
-        currentTarget.position.y !== player.position.y ||
+        currentTarget.position.y !== player.position.y
+
+      // Check if ball position changed
+      const ballPositionChanged = !currentTarget ||
         currentTarget.ball.x !== player.ball.position.x ||
         currentTarget.ball.y !== player.ball.position.y
 
-      if (!positionChanged) return
+      // Only update if something changed
+      if (!playerPositionChanged && !ballPositionChanged) return
 
       if (currentTarget) {
         previousPositionsRef.current.set(player.id, {
@@ -45,7 +50,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         ball: { ...player.ball.position }
       })
 
-      lastUpdateTimeRef.current = Date.now()
+      lastUpdateTimeRef.current.set(player.id, Date.now())
     })
   }, [gameState.lastUpdate])
 
@@ -181,14 +186,6 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         ctx.fill()
       }
 
-      const elapsedSecondsSinceUpdate = (Date.now() - lastUpdateTimeRef.current) / 1000
-      const playerInterpolationFactor = tickIntervalSeconds > 0
-        ? Math.min(elapsedSecondsSinceUpdate / tickIntervalSeconds, 1)
-        : 1
-      const ballInterpolationFactor = tickIntervalSeconds > 0
-        ? Math.min(elapsedSecondsSinceUpdate / (tickIntervalSeconds / 6), 1)
-        : 1
-
       const calculatePositionBetween = (start: Point, end: Point, progress: number): Point => ({
         x: start.x + (end.x - start.x) * progress,
         y: start.y + (end.y - start.y) * progress
@@ -197,6 +194,16 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
       for (const [playerId, targetPos] of targetPositionsRef.current.entries()) {
         const prevPos = previousPositionsRef.current.get(playerId)
         if (!prevPos) continue
+
+        // Calculate interpolation independently for each player
+        const lastUpdateTime = lastUpdateTimeRef.current.get(playerId) || Date.now()
+        const elapsedSecondsSinceUpdate = (Date.now() - lastUpdateTime) / 1000
+        const playerInterpolationFactor = tickIntervalSeconds > 0
+          ? Math.min(elapsedSecondsSinceUpdate / tickIntervalSeconds, 1)
+          : 1
+        const ballInterpolationFactor = tickIntervalSeconds > 0
+          ? Math.min(elapsedSecondsSinceUpdate / (tickIntervalSeconds / 6), 1)
+          : 1
 
         const playerPos = transform(
           playerInterpolationFactor < 1
