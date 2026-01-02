@@ -1,5 +1,6 @@
 from ..agents.player_agent import PlayerAgent
 from ..utils.calculations import Calculations
+from ..constants import SHOT_TAKING_DISTANCE
 
 
 class PlayerGroup:
@@ -10,6 +11,9 @@ class PlayerGroup:
         self.tee_time = tee_time
         self.current_turn_index = 0
         self.is_complete = False
+        self.players_need_to_shoot = set()
+
+        self.mark_all_players_need_to_shoot()
 
     def get_current_turn_index(self) -> int:
         """Get the index of the player whose turn it is."""
@@ -34,14 +38,27 @@ class PlayerGroup:
     
     def are_all_players_at_ball(self) -> bool:
         """Check if all players have finished walking to their balls."""
-        return all(
-            player.state == "idle" or player.is_complete 
-            for player in self.players
-        )
+        for player in self.players:
+            if player.is_complete:
+                continue
+            distance = Calculations.get_distance(player.player_position, player.ball_position)
+            if distance >= SHOT_TAKING_DISTANCE:
+                return False
+        return True
     
     def walk_all_players_to_balls(self):
         """Move all players one step towards their balls."""
         for player in self.players:
             if not player.is_complete:
                 player.walk_to_ball()
+
+    def mark_all_players_need_to_shoot(self):
+        """Mark all incomplete players as needing to shoot this round."""
+        self.players_need_to_shoot = {
+            i for i, player in enumerate(self.players) if not player.is_complete
+        }
+    
+    def all_shots_taken_this_round(self) -> bool:
+        """Check if all players who need to shoot have taken their shots."""
+        return len(self.players_need_to_shoot) == 0
 

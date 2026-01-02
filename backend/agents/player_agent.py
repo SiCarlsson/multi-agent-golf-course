@@ -63,7 +63,7 @@ class PlayerAgent:
 
         self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data)
 
-        self.state = "waiting"
+        self.state = "idle"  # Set to idle immediately after shot
         self.walking_progress = 0.0
 
         new_distance_to_flag = Calculations.get_distance(self.ball_position, flag)
@@ -86,7 +86,7 @@ class PlayerAgent:
         """
         Move player towards ball. Returns True when reached.
         """
-        if self.state != "walking" and self.state != "waiting":
+        if self.state != "walking" and self.state != "idle":
             return True
 
         distance = Calculations.get_distance(self.player_position, self.ball_position)
@@ -97,7 +97,7 @@ class PlayerAgent:
             self.walking_progress = 1.0
             return True
 
-        if self.state == "waiting":
+        if self.state == "idle":
             self.state = "walking"
 
         direction = Calculations.get_direction(self.player_position, self.ball_position)

@@ -38,15 +38,14 @@ class SimulationEngine:
             if not group.is_complete:
                 hole_data = self.holes[group.current_hole_number]
 
-                if not group.are_all_players_at_ball():
-                    group.walk_all_players_to_balls()
-                    logger.info(f"Group {group.group_id} players walking to balls")
-                else:
+                # Phase 1: Shooting phase - all players must shoot before any walking begins
+                if not group.all_shots_taken_this_round():
                     group.set_current_turn_index(hole_data)
                     player = group.players[group.current_turn_index]
 
-                    if not player.is_complete:
+                    if not player.is_complete and group.current_turn_index in group.players_need_to_shoot:
                         shot_result = player.take_shot(hole_data)
+                        group.players_need_to_shoot.discard(group.current_turn_index)
                         logger.info(
                             f"Player {player.id} took shot {shot_result['stroke_number']}"
                         )
@@ -57,6 +56,13 @@ class SimulationEngine:
 
                     if all(p.is_complete for p in group.players):
                         self._advance_group_to_next_hole(group)
+                
+                elif not group.are_all_players_at_ball():
+                    group.walk_all_players_to_balls()
+                    logger.info(f"Group {group.group_id} players walking to balls")
+                
+                else:
+                    group.mark_all_players_need_to_shoot()
 
         return self.get_state()
 
@@ -77,6 +83,7 @@ class SimulationEngine:
                 player.ball_position = tee_pos.copy()
                 player.state = "idle"
                 player.strokes = 0
+            group.mark_all_players_need_to_shoot()
         else:
             group.is_complete = True
             logger.info(f"Group {group.group_id} has completed the course.")
