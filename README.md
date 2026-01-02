@@ -4,22 +4,26 @@ This is the course project for Artificial Intelligence and Applications (ID1214)
 
 ---
 
+### Project description
+To be written!
+
+---
+
 ### Frontend (React + TypeScript)
 
-- **React + TypeScript** – component-based, type-safe
-- **Node.js** with **Vite** – fast build tooling and development server
-- **TailwindCSS** – HUD, scoreboards, buttons, and panels
-- **HTML5 Canvas** – draws fairways, greens, sand, water, players, balls, and weather
+- **React + TypeScript** – frontend framework, handles golf course animations
+- **Node.js** with **Vite** – frontend server
+- **TailwindCSS** – overall website design
+- **HTML5 Canvas** – draws the course, players and balls
 
 ### Backend (Python)
-
-- **Python**
-- **FastAPI** – WebSocket API
-  - **Communication**: Real-time updates via WebSocket connections
-- **Multi-agent simulation** (in development):
+- **Simulation engine** - Written in Python, handles the logic of the project
+- **FastAPI** – WebSocket API for communication with frontend
+- **Artificial intelligence agents** (in development):
   - Player agents
   - Greenkeeper agents
-  - Weather system
+  - Weather agent
+  - Wind agent
 
 ---
 
