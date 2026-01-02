@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom"
-import type { GameState } from "../models"
 
-const RootLayout = ({ model }: { model: GameState }) => {
+const RootLayout = () => {
 
   return (
     <div className="min-h-screen">
@@ -44,7 +43,7 @@ const RootLayout = ({ model }: { model: GameState }) => {
         </NavLink>
       </nav>
       <main>
-        <Outlet context={{ model }} />
+        <Outlet />
       </main>
     </div>
   )

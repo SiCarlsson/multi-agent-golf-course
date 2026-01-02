@@ -34,7 +34,7 @@ def main():
     print("Starting simulation...\n")
     max_ticks = 100
     for i in range(max_ticks):
-        state = engine.tick()
+        engine.tick()
 
         # Check if all groups are done
         if all(g.is_complete for g in engine.player_groups):

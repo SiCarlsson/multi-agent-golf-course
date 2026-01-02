@@ -16,7 +16,7 @@ import GamePresenter from "./presenters/GamePresenter.tsx"
 const App = observer(({ gameModel }: { gameModel: GameState }) => {
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path="/" element={<RootLayout model={gameModel} />}>
+      <Route path="/" element={<RootLayout />}>
         <Route index element={<GamePresenter gameState={gameModel} />} />
         <Route path="about" element={<AboutPresenter />} />
         <Route path="statistics" element={<StatisticsPresenter />} />
