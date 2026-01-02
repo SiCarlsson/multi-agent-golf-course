@@ -1,6 +1,6 @@
 # Multi-Agent Golf Simulation
 
-This is a course project for Artificial Intelligence and Applications (ID1214) at the Royal Institute of Technology (KTH).
+This is the course project for Artificial Intelligence and Applications (ID1214) at the Royal Institute of Technology (KTH).
 
 ---
 
@@ -25,7 +25,7 @@ This is a course project for Artificial Intelligence and Applications (ID1214) a
 
 ## **Getting Started**
 
-### Quick Start with Docker (Recommended)
+### Quick Start - Docker (Recommended)
 
 The easiest way to run the entire application:
 
@@ -45,7 +45,7 @@ make docker-down       # Stop containers
 make docker-rebuild    # Rebuild without cache
 ```
 
-### Quick Start (Local Development)
+### Quick Start - Local Development
 
 Once dependencies are installed, run both servers simultaneously:
 
@@ -55,7 +55,7 @@ make dev
 
 ### Backend Setup
 
-1. Create and activate a virtual environment (recommended):
+1. Create and activate a virtual environment:
 
    ```bash
    python -m venv venv
@@ -94,14 +94,4 @@ make dev
 ---
 
 ## **Frontend Architecture / MVP Structure**
-
-- **Model**
-  - Holes, fairway/green/sand/water polygons
-  - Agent positions
-  - Weather and wind
-- **Presenter**
-  - Handles backend updates
-  - Tick-based simulation
-- **View**
-  - `CanvasRenderer` draws polygons and agents
-  - HUD and panels rendered with Tailwind
+To be written!
