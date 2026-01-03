@@ -13,6 +13,7 @@ class SimulationEngine:
     def __init__(self):
         self.holes = {}
         self.player_groups = []
+        self.greenkeeper = None
         self.tick_count = 0
 
         self._load_all_holes()
@@ -33,6 +34,19 @@ class SimulationEngine:
     def tick(self):
         """Process one simulation step for all active groups."""
         self.tick_count += 1
+        flag_update = None
+
+        if self.greenkeeper:
+            greenkeeper_result = self.greenkeeper.update()
+
+            if greenkeeper_result["flag_changed"]:
+                hole_num = greenkeeper_result["hole_number"]
+                new_flag_pos = greenkeeper_result["new_flag_position"]
+                self.holes[hole_num]["flag"] = new_flag_pos
+                flag_update = {"hole": hole_num, "position": new_flag_pos}
+                logger.info(
+                    f"Greenkeeper changed flag on hole {hole_num} to position {new_flag_pos}"
+                )
 
         for group in self.player_groups:
             if not group.is_complete:
@@ -67,7 +81,7 @@ class SimulationEngine:
                 else:
                     group.mark_all_players_need_to_shoot()
 
-        return self.get_state()
+        return self.get_state(flag_update)
 
     def _advance_group_to_next_hole(self, group: PlayerGroup):
         """Advance the group to the next hole or mark as complete."""
@@ -97,9 +111,9 @@ class SimulationEngine:
         avg_y = sum(p["y"] for p in tee_box) / len(tee_box)
         return {"x": avg_x, "y": avg_y}
 
-    def get_state(self):
+    def get_state(self, flag_update=None):
         """Get current simulation state."""
-        return {
+        state = {
             "tick": self.tick_count,
             "groups": [
                 {
@@ -109,3 +123,11 @@ class SimulationEngine:
                 for group in self.player_groups
             ],
         }
+
+        if self.greenkeeper:
+            state["greenkeeper"] = self.greenkeeper.get_state()
+
+        if flag_update:
+            state["flag_update"] = flag_update
+
+        return state

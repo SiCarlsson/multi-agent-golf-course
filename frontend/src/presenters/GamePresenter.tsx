@@ -18,9 +18,22 @@ interface BackendGroup {
   players: BackendPlayer[];
 }
 
+interface BackendGreenkeeper {
+  id: number;
+  position: Point;
+  state: string;
+  current_hole: number | null;
+  holes_needing_service: number;
+}
+
 interface BackendGameState {
   tick: number;
   groups: BackendGroup[];
+  greenkeeper?: BackendGreenkeeper;
+  flag_update?: {
+    hole: number;
+    position: Point;
+  };
 }
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
@@ -63,6 +76,31 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
                   }))
                 );
                 gameState.players = allPlayers;
+
+                // Update greenkeeper if exists
+                if (backendData.greenkeeper) {
+                  gameState.greenkeepers = [{
+                    id: backendData.greenkeeper.id,
+                    position: backendData.greenkeeper.position,
+                    currentTask: backendData.greenkeeper.state as 'break' | 'placing_flag' | 'maintaining' | 'waiting',
+                    assignedHole: backendData.greenkeeper.current_hole ?? undefined
+                  }];
+                }
+
+                if (backendData.flag_update) {
+                  setCourseData(prevCourseData => {
+                    const updatedHoles = [...prevCourseData.holes];
+                    const holeIndex = backendData.flag_update!.hole - 1;
+                    if (holeIndex >= 0 && holeIndex < updatedHoles.length) {
+                      updatedHoles[holeIndex] = {
+                        ...updatedHoles[holeIndex],
+                        flag: backendData.flag_update!.position
+                      };
+                    }
+                    return { holes: updatedHoles };
+                  });
+                }
+
                 gameState.lastUpdate = Date.now();
               });
             }

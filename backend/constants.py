@@ -12,6 +12,14 @@ HOLE_COMPLETION_DISTANCE = 1.0
 # Determine player to ball distance for shot to be taken in meters
 SHOT_TAKING_DISTANCE = 1.0
 
+# Number of ticks for greenkeeper to place a flag
+FLAG_PLACEMENT_DURATION_TICKS = 3
+
+# Number of ticks before a hole needs flag service
+HOLE_SERVICE_INTERVAL_TICKS = 15
+
+# Distance in meters greenkeeper maintains from hole when idle
+GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
 
 # Base maximum distance for a club in meters
 BASE_MAX_DISTANCE = 225

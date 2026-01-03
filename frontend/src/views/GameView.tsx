@@ -14,6 +14,14 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
   const targetPositionsRef = useRef<Map<number, { position: Point, ball: Point }>>(new Map())
   const lastUpdateTimeRef = useRef<Map<number, number>>(new Map())
 
+  // Greenkeeper animations
+  const greenkeeperPreviousPositionRef = useRef<Point | null>(null)
+  const greenkeeperTargetPositionRef = useRef<Point | null>(null)
+  const greenkeeperLastUpdateTimeRef = useRef<number>(Date.now())
+
+  // Flag update tracking
+  const updatedFlagsRef = useRef<Map<number, number>>(new Map())
+
   useEffect(() => {
     if (!gameState.lastUpdate) return
 
@@ -52,7 +60,49 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
       lastUpdateTimeRef.current.set(player.id, Date.now())
     })
+
+    // Update greenkeeper position tracking
+    if (gameState.greenkeepers && gameState.greenkeepers.length > 0) {
+      const greenkeeper = gameState.greenkeepers[0]
+      if (greenkeeper.position) {
+        const currentTarget = greenkeeperTargetPositionRef.current
+
+        // Check if position changed
+        const positionChanged = !currentTarget ||
+          currentTarget.x !== greenkeeper.position.x ||
+          currentTarget.y !== greenkeeper.position.y
+
+        if (positionChanged) {
+          if (currentTarget) {
+            greenkeeperPreviousPositionRef.current = { ...currentTarget }
+          } else {
+            greenkeeperPreviousPositionRef.current = { ...greenkeeper.position }
+          }
+
+          greenkeeperTargetPositionRef.current = { ...greenkeeper.position }
+          greenkeeperLastUpdateTimeRef.current = Date.now()
+        }
+      }
+    }
   }, [gameState.lastUpdate])
+
+  // Track flag position changes
+  const previousFlagPositionsRef = useRef<Map<number, Point>>(new Map());
+
+  useEffect(() => {
+    courseData.holes.forEach((hole, index) => {
+      const holeNumber = index + 1;
+      const currentFlag = hole.flag;
+      const previousFlag = previousFlagPositionsRef.current.get(holeNumber);
+
+      // Check if flag position changed
+      if (previousFlag && (previousFlag.x !== currentFlag.x || previousFlag.y !== currentFlag.y)) {
+        updatedFlagsRef.current.set(holeNumber, Date.now());
+      }
+
+      previousFlagPositionsRef.current.set(holeNumber, { ...currentFlag });
+    });
+  }, [courseData]);
 
 
   useEffect(() => {
@@ -166,6 +216,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
         if (hole.flag) {
           const flag = transform(hole.flag)
+
           ctx.fillStyle = "#ff0000"
           ctx.beginPath()
           ctx.arc(flag.x, flag.y, 5, 0, Math.PI * 2)
@@ -251,6 +302,36 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         ctx.lineWidth = 2
         ctx.stroke()
       })
+
+      // Draw greenkeeper
+      if (gameState.greenkeepers && gameState.greenkeepers.length > 0) {
+        const greenkeeper = gameState.greenkeepers[0]
+        const targetPos = greenkeeperTargetPositionRef.current
+        const prevPos = greenkeeperPreviousPositionRef.current
+
+        if (targetPos && prevPos && greenkeeper.position) {
+          const lastUpdateTime = greenkeeperLastUpdateTimeRef.current
+          const elapsedSecondsSinceUpdate = (Date.now() - lastUpdateTime) / 1000
+          const interpolationFactor = tickIntervalSeconds > 0
+            ? Math.min(elapsedSecondsSinceUpdate / tickIntervalSeconds, 1)
+            : 1
+
+          const interpolatedPos = interpolationFactor < 1
+            ? calculatePositionBetween(prevPos, targetPos, interpolationFactor)
+            : targetPos
+
+          const gkPos = transform(interpolatedPos)
+
+          // Greenkeeper body (green circle)
+          ctx.fillStyle = "#22c55e"
+          ctx.beginPath()
+          ctx.arc(gkPos.x, gkPos.y, 8, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.strokeStyle = "#000000"
+          ctx.lineWidth = 2
+          ctx.stroke()
+        }
+      }
 
       animationFrameRef.current = requestAnimationFrame(animate)
     }
