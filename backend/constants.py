@@ -21,6 +21,9 @@ HOLE_SERVICE_INTERVAL_TICKS = 15
 # Distance in meters greenkeeper maintains from hole when idle
 GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
 
+# Safety distance in meters - players wait if shot would land within this distance of greenkeeper
+GREENKEEPER_SAFETY_DISTANCE_METERS = 25.0
+
 # Base maximum distance for a club in meters
 BASE_MAX_DISTANCE = 225
 

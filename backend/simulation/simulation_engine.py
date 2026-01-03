@@ -60,11 +60,20 @@ class SimulationEngine:
                         not player.is_complete
                         and group.current_turn_index in group.players_need_to_shoot
                     ):
-                        shot_result = player.take_shot(hole_data)
-                        group.players_need_to_shoot.discard(group.current_turn_index)
-                        logger.info(
-                            f"Player {player.id} took shot {shot_result['stroke_number']}"
-                        )
+                        # Check if it's safe to shoot (greenkeeper not in landing zone)
+                        greenkeeper_pos = self.greenkeeper.position if self.greenkeeper else None
+                        can_shoot = player.can_take_shot(hole_data, greenkeeper_pos)
+                        
+                        if can_shoot:
+                            shot_result = player.take_shot(hole_data)
+                            group.players_need_to_shoot.discard(group.current_turn_index)
+                            logger.info(
+                                f"Player {player.id} took shot {shot_result['stroke_number']}"
+                            )
+                        else:
+                            logger.info(
+                                f"Player {player.id} waiting - greenkeeper too close to landing zone"
+                            )
                     elif player.is_complete:
                         group.players_need_to_shoot.discard(group.current_turn_index)
                         logger.info(
