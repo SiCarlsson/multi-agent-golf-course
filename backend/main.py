@@ -68,8 +68,8 @@ async def lifespan(app: FastAPI):
     simulation_engine = SimulationEngine()
 
     # Sample player and group
-    player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
-    player_2 = PlayerAgent(id=2, accuracy=0.8, strength=0.85)
+    player_1 = PlayerAgent(id=1, accuracy=0.2, strength=0.85)
+    player_2 = PlayerAgent(id=2, accuracy=1.0, strength=0.85)
     group = PlayerGroup(id=1, players=[player_1, player_2], starting_hole=1, tee_time=0)
 
     # Position player and ball at tee

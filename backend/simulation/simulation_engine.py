@@ -42,24 +42,28 @@ class SimulationEngine:
                     group.set_current_turn_index(hole_data)
                     player = group.players[group.current_turn_index]
 
-                    if not player.is_complete and group.current_turn_index in group.players_need_to_shoot:
+                    if (
+                        not player.is_complete
+                        and group.current_turn_index in group.players_need_to_shoot
+                    ):
                         shot_result = player.take_shot(hole_data)
                         group.players_need_to_shoot.discard(group.current_turn_index)
                         logger.info(
                             f"Player {player.id} took shot {shot_result['stroke_number']}"
                         )
-                    else:
+                    elif player.is_complete:
+                        group.players_need_to_shoot.discard(group.current_turn_index)
                         logger.info(
                             f"Player {player.id} has completed hole {group.current_hole_number}."
                         )
 
                     if all(p.is_complete for p in group.players):
                         self._advance_group_to_next_hole(group)
-                
+
                 elif not group.are_all_players_at_ball():
                     group.walk_all_players_to_balls()
                     logger.info(f"Group {group.group_id} players walking to balls")
-                
+
                 else:
                     group.mark_all_players_need_to_shoot()
 
