@@ -131,7 +131,9 @@ class ShotUtility:
     ) -> float:
         """Get maximum distance for a club considering player strength and lie."""
         base_distance = BASE_MAX_DISTANCE * CLUB_MULTIPLIERS[club]
+
         strength_adjusted = base_distance * player_strength
+        lie_multiplier = LIE_MULTIPLIERS_DISTANCE.get(current_lie)
 
         lie_multiplier = LIE_MULTIPLIERS_DISTANCE.get(current_lie, 1.0)
         final_distance = strength_adjusted * lie_multiplier

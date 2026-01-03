@@ -63,7 +63,7 @@ class PlayerAgent:
 
         self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data)
 
-        self.state = "idle"  # Set to idle immediately after shot
+        self.state = "idle"
         self.walking_progress = 0.0
 
         new_distance_to_flag = Calculations.get_distance(self.ball_position, flag)

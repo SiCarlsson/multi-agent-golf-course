@@ -38,7 +38,6 @@ class SimulationEngine:
             if not group.is_complete:
                 hole_data = self.holes[group.current_hole_number]
 
-                # Phase 1: Shooting phase - all players must shoot before any walking begins
                 if not group.all_shots_taken_this_round():
                     group.set_current_turn_index(hole_data)
                     player = group.players[group.current_turn_index]
