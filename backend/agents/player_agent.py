@@ -6,6 +6,7 @@ from ..constants import (
     WALKING_SPEED,
     HOLE_COMPLETION_DISTANCE,
     SHOT_TAKING_DISTANCE,
+    GREENKEEPER_SAFETY_DISTANCE_METERS,
 )
 from .shot_utility import ShotUtility
 from ..utils.calculations import Calculations
@@ -28,6 +29,21 @@ class PlayerAgent:
 
         self.state = "idle"
         self.walking_progress = 0.0
+
+    def can_take_shot(self, hole_data: Dict[str, Any], greenkeeper_position: Dict[str, float] = None) -> bool:
+        """Check if it's safe to take a shot (greenkeeper not in landing zone)."""
+        if greenkeeper_position is None:
+            return True
+        
+        best_shot = ShotUtility.select_best_shot(
+            self.ball_position, self.current_lie, self.strength, hole_data
+        )
+        
+        landing_position = best_shot["landing_position"]
+        
+        distance_to_greenkeeper = Calculations.get_distance(landing_position, greenkeeper_position)
+        
+        return distance_to_greenkeeper >= GREENKEEPER_SAFETY_DISTANCE_METERS
 
     def take_shot(self, hole_data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute one shot using utility-based decision making."""
@@ -63,7 +79,7 @@ class PlayerAgent:
 
         self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data)
 
-        self.state = "idle"  # Set to idle immediately after shot
+        self.state = "idle"
         self.walking_progress = 0.0
 
         new_distance_to_flag = Calculations.get_distance(self.ball_position, flag)

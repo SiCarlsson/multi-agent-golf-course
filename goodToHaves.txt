@@ -1,1 +1,2 @@
 - Golfspelare går inte på bunkrar eller i vatten
+- Om en spelare är märkbart sämre än den första så uppstår det ett "stuck"-problem med att ingen spelare gör något alls när de är nära vid hålen

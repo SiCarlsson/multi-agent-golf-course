@@ -10,7 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from backend.loader import regenerate_course_data
 from backend.simulation import SimulationEngine
 from backend.simulation.player_group import PlayerGroup
-from backend.agents import PlayerAgent
+from backend.agents import PlayerAgent, GreenkeeperAgent
 from backend.constants import TICK_INTERVAL_SECONDS
 
 # Configure logging
@@ -25,10 +25,11 @@ simulation_task = None
 active_connections: Set[WebSocket] = set()
 
 
-async def broadcast_game_state():
+async def broadcast_game_state(game_state=None):
     """Broadcast game state to all connected clients."""
     if simulation_engine and active_connections:
-        game_state = simulation_engine.get_state()
+        if game_state is None:
+            game_state = simulation_engine.get_state()
         message = json.dumps({"type": "gamestate", "data": game_state})
 
         disconnected = set()
@@ -52,8 +53,8 @@ async def run_simulation():
         if simulation_engine and simulation_engine.player_groups:
             if not all(group.is_complete for group in simulation_engine.player_groups):
                 logger.info("TICK")
-                simulation_engine.tick()
-                await broadcast_game_state()
+                game_state = simulation_engine.tick()
+                await broadcast_game_state(game_state)
             else:
                 logger.info("Simulation complete for all groups.")
                 break
@@ -66,6 +67,12 @@ async def lifespan(app: FastAPI):
     regenerate_course_data()
 
     simulation_engine = SimulationEngine()
+
+    # Create greenkeeper
+    greenkeeper = GreenkeeperAgent(
+        id=1, num_holes=simulation_engine.num_holes, holes_data=simulation_engine.holes
+    )
+    simulation_engine.greenkeeper = greenkeeper
 
     # Sample player and group
     player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
@@ -112,13 +119,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 holes.append(hole_data)
 
         await websocket.send_text(
-            json.dumps({
-                "type": "course_data", 
-                "data": {
-                    "holes": holes,
-                    "tick_interval": TICK_INTERVAL_SECONDS
+            json.dumps(
+                {
+                    "type": "course_data",
+                    "data": {"holes": holes, "tick_interval": TICK_INTERVAL_SECONDS},
                 }
-            })
+            )
         )
 
         if simulation_engine:
