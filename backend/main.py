@@ -10,16 +10,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from backend.loader import regenerate_course_data
 from backend.simulation import SimulationEngine
 from backend.simulation.player_group import PlayerGroup
-from backend.agents import PlayerAgent, GreenkeeperAgent
+from backend.agents import PlayerAgent, GreenkeeperAgent, WindAgent
 from backend.constants import TICK_INTERVAL_SECONDS
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# Global simulation instance
 simulation_engine = None
 simulation_task = None
 active_connections: Set[WebSocket] = set()
@@ -68,11 +66,13 @@ async def lifespan(app: FastAPI):
 
     simulation_engine = SimulationEngine()
 
-    # Create greenkeeper
     greenkeeper = GreenkeeperAgent(
         id=1, num_holes=simulation_engine.num_holes, holes_data=simulation_engine.holes
     )
     simulation_engine.greenkeeper = greenkeeper
+
+    wind_agent = WindAgent()
+    simulation_engine.wind_agent = wind_agent
 
     # Sample player and group
     player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)

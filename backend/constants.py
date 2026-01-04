@@ -56,3 +56,9 @@ LIE_MULTIPLIERS_UTILITY = {
     "rough": 2.0,
     "bunker": 3.0,
 }
+
+# Ticks between wind condition updates
+WIND_UPDATE_TICKER_INTERVAL = 1
+
+# Wind effect factor in percentage effect per m/s of wind speed
+WIND_EFFECT_FACTOR = 0.02
