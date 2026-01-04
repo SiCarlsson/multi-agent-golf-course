@@ -14,6 +14,7 @@ class SimulationEngine:
         self.holes = {}
         self.player_groups = []
         self.greenkeeper = None
+        self.wind_agent = None
         self.tick_count = 0
 
         self._load_all_holes()
@@ -35,6 +36,10 @@ class SimulationEngine:
         """Process one simulation step for all active groups."""
         self.tick_count += 1
         flag_update = None
+
+        # Update wind conditions
+        if self.wind_agent:
+            self.wind_agent.update()
 
         if self.greenkeeper:
             greenkeeper_result = self.greenkeeper.update()
@@ -60,13 +65,17 @@ class SimulationEngine:
                         not player.is_complete
                         and group.current_turn_index in group.players_need_to_shoot
                     ):
-                        # Check if it's safe to shoot (greenkeeper not in landing zone)
-                        greenkeeper_pos = self.greenkeeper.position if self.greenkeeper else None
-                        can_shoot = player.can_take_shot(hole_data, greenkeeper_pos)
-                        
+                        greenkeeper_pos = self.greenkeeper.position
+                        wind_conditions = self.wind_agent.get_current_conditions()
+                        can_shoot = player.can_take_shot(
+                            hole_data, greenkeeper_pos, wind_conditions
+                        )
+
                         if can_shoot:
-                            shot_result = player.take_shot(hole_data)
-                            group.players_need_to_shoot.discard(group.current_turn_index)
+                            shot_result = player.take_shot(hole_data, wind_conditions)
+                            group.players_need_to_shoot.discard(
+                                group.current_turn_index
+                            )
                             logger.info(
                                 f"Player {player.id} took shot {shot_result['stroke_number']}"
                             )
@@ -133,8 +142,8 @@ class SimulationEngine:
             ],
         }
 
-        if self.greenkeeper:
-            state["greenkeeper"] = self.greenkeeper.get_state()
+        state["greenkeeper"] = self.greenkeeper.get_state()
+        state["wind"] = self.wind_agent.get_current_conditions()
 
         if flag_update:
             state["flag_update"] = flag_update

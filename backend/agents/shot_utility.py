@@ -1,6 +1,7 @@
 import math
 from typing import Dict, Any, List
 
+from .wind_agent import WindAgent
 from ..constants import (
     BASE_MAX_DISTANCE,
     CLUB_MULTIPLIERS,
@@ -22,6 +23,8 @@ class ShotUtility:
         current_lie: str,
         player_strength: float,
         hole_data: Dict[str, Any],
+        wind_conditions: Dict[str, Any] = None,
+        player_accuracy: float = 1.0,
     ) -> Dict[str, Any]:
         flag = hole_data["flag"]
         distance_to_flag = Calculations.get_distance(ball_position, flag)
@@ -34,6 +37,8 @@ class ShotUtility:
             distance_to_flag,
             direction_to_flag,
             hole_data,
+            wind_conditions,
+            player_accuracy,
         )
 
         best_shot = None
@@ -57,6 +62,8 @@ class ShotUtility:
         distance_to_flag: float,
         direction_to_flag: float,
         hole_data: Dict[str, Any],
+        wind_conditions: Dict[str, Any] = None,
+        player_accuracy: float = 1.0,
     ) -> List[Dict[str, Any]]:
         """Generate multiple shot options to evaluate."""
         options = []
@@ -79,7 +86,11 @@ class ShotUtility:
                     direction = direction_to_flag + math.radians(degrees)
 
                     landing_pos = ShotUtility._calculate_landing_position(
-                        ball_position, power, direction
+                        ball_position,
+                        power,
+                        direction,
+                        wind_conditions,
+                        player_accuracy,
                     )
                     landing_lie = ShotUtility.determine_lie(landing_pos, hole_data)
 
@@ -142,11 +153,30 @@ class ShotUtility:
 
     @staticmethod
     def _calculate_landing_position(
-        ball_position: Dict[str, float], power: float, direction: float
+        ball_position: Dict[str, float],
+        power: float,
+        direction: float,
+        wind_conditions: Dict[str, Any] = None,
+        player_accuracy: float = 1.0,
     ) -> Dict[str, float]:
-        """Calculate where the ball will land based on shot power and direction."""
+        """Calculate where the ball will land based on shot power, direction, and wind."""
         new_x = ball_position["x"] + power * math.cos(direction)
         new_y = ball_position["y"] + power * math.sin(direction)
+
+        wind_effect = WindAgent.calculate_wind_effect(wind_conditions, direction, power)
+
+        distance_change = wind_effect["distance_change"]
+        lateral_deviation = wind_effect["lateral_deviation"]
+
+        wind_compensation_error = 1.0 - player_accuracy
+
+        effective_distance_change = distance_change * wind_compensation_error
+        effective_lateral_deviation = lateral_deviation * wind_compensation_error
+
+        new_x += effective_distance_change * math.cos(direction)
+        new_y += effective_distance_change * math.sin(direction)
+        new_x += effective_lateral_deviation * math.cos(direction + math.pi / 2)
+        new_y += effective_lateral_deviation * math.sin(direction + math.pi / 2)
 
         return {"x": new_x, "y": new_y}
 
@@ -168,6 +198,6 @@ class ShotUtility:
         ):
             return "fairway"
 
-        #TODO: Add water check
+        # TODO: Add water check
 
         return "rough"

@@ -1,15 +1,19 @@
 import math
 import random
-from typing import Dict, Any
+import logging
 
+from typing import Dict, Any
 from ..constants import (
     WALKING_SPEED,
     HOLE_COMPLETION_DISTANCE,
     SHOT_TAKING_DISTANCE,
     GREENKEEPER_SAFETY_DISTANCE_METERS,
 )
+from .wind_agent import WindAgent
 from .shot_utility import ShotUtility
 from ..utils.calculations import Calculations
+
+logger = logging.getLogger(__name__)
 
 
 class PlayerAgent:
@@ -30,22 +34,36 @@ class PlayerAgent:
         self.state = "idle"
         self.walking_progress = 0.0
 
-    def can_take_shot(self, hole_data: Dict[str, Any], greenkeeper_position: Dict[str, float] = None) -> bool:
+    def can_take_shot(
+        self,
+        hole_data: Dict[str, Any],
+        greenkeeper_position: Dict[str, float] = None,
+        wind_conditions: Dict[str, Any] = None,
+    ) -> bool:
         """Check if it's safe to take a shot (greenkeeper not in landing zone)."""
         if greenkeeper_position is None:
             return True
-        
+
         best_shot = ShotUtility.select_best_shot(
-            self.ball_position, self.current_lie, self.strength, hole_data
+            self.ball_position,
+            self.current_lie,
+            self.strength,
+            hole_data,
+            wind_conditions,
+            self.accuracy,
         )
-        
+
         landing_position = best_shot["landing_position"]
-        
-        distance_to_greenkeeper = Calculations.get_distance(landing_position, greenkeeper_position)
-        
+
+        distance_to_greenkeeper = Calculations.get_distance(
+            landing_position, greenkeeper_position
+        )
+
         return distance_to_greenkeeper >= GREENKEEPER_SAFETY_DISTANCE_METERS
 
-    def take_shot(self, hole_data: Dict[str, Any]) -> Dict[str, Any]:
+    def take_shot(
+        self, hole_data: Dict[str, Any], wind_conditions: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """Execute one shot using utility-based decision making."""
         self.strokes += 1
         self.state = "hitting"
@@ -53,7 +71,12 @@ class PlayerAgent:
         flag = hole_data["flag"]
 
         best_shot = ShotUtility.select_best_shot(
-            self.ball_position, self.current_lie, self.strength, hole_data
+            self.ball_position,
+            self.current_lie,
+            self.strength,
+            hole_data,
+            wind_conditions,
+            self.accuracy,
         )
 
         club = best_shot["club"]
@@ -72,10 +95,28 @@ class PlayerAgent:
 
         old_ball_position = self.ball_position.copy()
 
+        # Calculate ball position
+        # Wind is already considered in shot planning, so just apply the chosen direction and power
         self.ball_position = {
             "x": self.ball_position["x"] + actual_power * math.cos(actual_direction),
             "y": self.ball_position["y"] + actual_power * math.sin(actual_direction),
         }
+
+        # Log wind conditions for informational purposes
+        wind_effect = {"distance_change": 0, "lateral_deviation": 0}
+        if wind_conditions:
+            logger.info(
+                f"Player {self.id} shooting with wind: {wind_conditions['speed']:.1f} m/s "
+                f"from {wind_conditions['direction']:.1f}° (accuracy: {self.accuracy})"
+            )
+            # Calculate what the wind effect would be (for logging/statistics only)
+            wind_effect = WindAgent.calculate_wind_effect(
+                wind_conditions, actual_direction, actual_power
+            )
+            logger.info(
+                f"Player {self.id} wind consideration: distance_change={wind_effect['distance_change']:.1f}m, "
+                f"lateral_deviation={wind_effect['lateral_deviation']:.1f}m"
+            )
 
         self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data)
 
@@ -96,6 +137,7 @@ class PlayerAgent:
             "distance_to_flag": new_distance_to_flag,
             "is_complete": self.is_complete,
             "club_used": club,
+            "wind_effect": wind_effect,
         }
 
     def walk_to_ball(self) -> bool:

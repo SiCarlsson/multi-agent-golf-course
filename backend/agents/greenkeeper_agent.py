@@ -82,8 +82,10 @@ class GreenkeeperAgent:
 
             for angle in [0, math.pi / 2, math.pi, 3 * math.pi / 2]:
                 check_point = {
-                    "x": position["x"] + GREENKEEPER_IDLE_DISTANCE_METERS * math.cos(angle),
-                    "y": position["y"] + GREENKEEPER_IDLE_DISTANCE_METERS * math.sin(angle),
+                    "x": position["x"]
+                    + GREENKEEPER_IDLE_DISTANCE_METERS * math.cos(angle),
+                    "y": position["y"]
+                    + GREENKEEPER_IDLE_DISTANCE_METERS * math.sin(angle),
                 }
                 if Calculations.point_in_polygon(check_point, polygon):
                     return True
@@ -118,7 +120,7 @@ class GreenkeeperAgent:
 
             return candidate
 
-        # Fallback: fixed position at x:20, y:0
+        # Fallback: fixed position
         return {"x": 20, "y": 0}
 
     def start_next_task(self):
@@ -131,7 +133,6 @@ class GreenkeeperAgent:
                     self.holes_data[next_hole]
                 )
                 self.state = "walking_to_hole"
-                # Remove from needing service while being serviced
                 self.holes_needing_service.discard(next_hole)
 
     def update(self) -> Dict[str, Any]:
