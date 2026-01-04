@@ -29,7 +29,11 @@ interface BackendGreenkeeper {
 interface BackendGameState {
   tick: number;
   groups: BackendGroup[];
-  greenkeeper?: BackendGreenkeeper;
+  greenkeeper: BackendGreenkeeper;
+  wind: {
+    direction: number;
+    speed: number;
+  };
   flag_update?: {
     hole: number;
     position: Point;
@@ -71,21 +75,24 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
                     ball: { position: player.ball_position },
                     score: player.strokes,
                     position: player.position,
-                    currentHole: group.current_hole,
-                    startTime: new Date().toISOString()
+                    currentHole: group.current_hole
                   }))
                 );
                 gameState.players = allPlayers;
 
-                // Update greenkeeper if exists
-                if (backendData.greenkeeper) {
-                  gameState.greenkeepers = [{
-                    id: backendData.greenkeeper.id,
-                    position: backendData.greenkeeper.position,
-                    currentTask: backendData.greenkeeper.state as 'break' | 'placing_flag' | 'maintaining' | 'waiting',
-                    assignedHole: backendData.greenkeeper.current_hole ?? undefined
-                  }];
-                }
+                // Update greenkeeper
+                gameState.greenkeepers = [{
+                  id: backendData.greenkeeper.id,
+                  position: backendData.greenkeeper.position,
+                  currentTask: backendData.greenkeeper.state as 'break' | 'placing_flag' | 'maintaining' | 'waiting',
+                  assignedHole: backendData.greenkeeper.current_hole ?? undefined
+                }];
+
+                // Update wind
+                gameState.weather.wind = {
+                  direction: backendData.wind.direction,
+                  speed: backendData.wind.speed
+                };
 
                 if (backendData.flag_update) {
                   setCourseData(prevCourseData => {

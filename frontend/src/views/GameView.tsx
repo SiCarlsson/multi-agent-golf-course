@@ -62,7 +62,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
     })
 
     // Update greenkeeper position tracking
-    if (gameState.greenkeepers && gameState.greenkeepers.length > 0) {
+    if (gameState.greenkeepers.length > 0) {
       const greenkeeper = gameState.greenkeepers[0]
       if (greenkeeper.position) {
         const currentTarget = greenkeeperTargetPositionRef.current
@@ -304,7 +304,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
       })
 
       // Draw greenkeeper
-      if (gameState.greenkeepers && gameState.greenkeepers.length > 0) {
+      if (gameState.greenkeepers.length > 0) {
         const greenkeeper = gameState.greenkeepers[0]
         const targetPos = greenkeeperTargetPositionRef.current
         const prevPos = greenkeeperPreviousPositionRef.current
@@ -332,6 +332,53 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           ctx.stroke()
         }
       }
+
+      // Draw wind indicator in top-left corner
+      const wind = gameState.weather.wind
+      const centerX = 60
+      const centerY = 50
+      const arrowLength = 35
+
+      const windAngle = (wind.direction + 180) * Math.PI / 180
+
+      // Calculate arrow start and end points (centered)
+      const startX = centerX - Math.sin(windAngle) * (arrowLength / 2)
+      const startY = centerY + Math.cos(windAngle) * (arrowLength / 2)
+      const endX = centerX + Math.sin(windAngle) * (arrowLength / 2)
+      const endY = centerY - Math.cos(windAngle) * (arrowLength / 2)
+
+      // Draw arrow shaft
+      ctx.strokeStyle = "#ffffff"
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.moveTo(startX, startY)
+      ctx.lineTo(endX, endY)
+      ctx.stroke()
+
+      // Draw arrowhead
+      const headSize = 10
+      const headAngle1 = windAngle - Math.PI / 6
+      const headAngle2 = windAngle + Math.PI / 6
+
+      ctx.beginPath()
+      ctx.moveTo(endX, endY)
+      ctx.lineTo(
+        endX - Math.sin(headAngle1) * headSize,
+        endY + Math.cos(headAngle1) * headSize
+      )
+      ctx.moveTo(endX, endY)
+      ctx.lineTo(
+        endX - Math.sin(headAngle2) * headSize,
+        endY + Math.cos(headAngle2) * headSize
+      )
+      ctx.stroke()
+
+      // Draw wind info text
+      ctx.fillStyle = "#ffffff"
+      ctx.font = "14px monospace"
+      ctx.textAlign = "center"
+      ctx.fillText(`${wind.speed.toFixed(1)} m/s`, centerX, centerY + 45)
+      ctx.fillText(`${wind.direction.toFixed(0)}°`, centerX, centerY + 63)
 
       animationFrameRef.current = requestAnimationFrame(animate)
     }

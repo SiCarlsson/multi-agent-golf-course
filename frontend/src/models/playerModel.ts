@@ -6,8 +6,6 @@ export interface Player {
   score: number;
   position: Point;
   currentHole: number;
-  startTime: string;
-  stopTime?: string[];
 }
 
 export interface Ball {
