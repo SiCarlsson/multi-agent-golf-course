@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
     # Sample player and group
     player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
     player_2 = PlayerAgent(id=2, accuracy=0.8, strength=0.85)
-    group = PlayerGroup(id=1, players=[player_1, player_2], starting_hole=1, tee_time=0)
+    group_1 = PlayerGroup(id=1, players=[player_1, player_2], starting_hole=1, tee_time=0)
 
     # Position player and ball at tee
     tee_box = simulation_engine.holes[1]["tees"][3]
@@ -87,7 +87,20 @@ async def lifespan(app: FastAPI):
     player_2.player_position = tee_position.copy()
     player_2.ball_position = tee_position.copy()
 
-    simulation_engine.player_groups.append(group)
+    simulation_engine.player_groups.append(group_1)
+
+    # Add a second group of two players
+    player_3 = PlayerAgent(id=3, accuracy=0.75, strength=0.9)
+    player_4 = PlayerAgent(id=4, accuracy=0.85, strength=0.8)
+    group_2 = PlayerGroup(id=2, players=[player_3, player_4], starting_hole=1, tee_time=0)
+
+    # Position second group players at tee
+    player_3.player_position = tee_position.copy()
+    player_3.ball_position = tee_position.copy()
+    player_4.player_position = tee_position.copy()
+    player_4.ball_position = tee_position.copy()
+
+    simulation_engine.player_groups.append(group_2)
 
     simulation_task = asyncio.create_task(run_simulation())
 
