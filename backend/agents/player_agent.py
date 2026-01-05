@@ -8,8 +8,8 @@ from ..constants import (
     HOLE_COMPLETION_DISTANCE,
     SHOT_TAKING_DISTANCE,
     GREENKEEPER_SAFETY_DISTANCE_METERS,
+    GROUP_SAFETY_DISTANCE_METERS,
 )
-from .wind_agent import WindAgent
 from .shot_utility import ShotUtility
 from ..utils.calculations import Calculations
 
@@ -39,11 +39,9 @@ class PlayerAgent:
         hole_data: Dict[str, Any],
         greenkeeper_position: Dict[str, float] = None,
         wind_conditions: Dict[str, Any] = None,
+        other_group_positions: list[Dict[str, float]] = None,
     ) -> bool:
-        """Check if it's safe to take a shot (greenkeeper not in landing zone)."""
-        if greenkeeper_position is None:
-            return True
-
+        """Check if it's safe to take a shot (greenkeeper and other groups not in landing zone)."""
         best_shot = ShotUtility.select_best_shot(
             self.ball_position,
             self.current_lie,
@@ -58,8 +56,23 @@ class PlayerAgent:
         distance_to_greenkeeper = Calculations.get_distance(
             landing_position, greenkeeper_position
         )
+        if distance_to_greenkeeper < GREENKEEPER_SAFETY_DISTANCE_METERS:
+            return False
 
-        return distance_to_greenkeeper >= GREENKEEPER_SAFETY_DISTANCE_METERS
+        if other_group_positions:
+            shot_distance = Calculations.get_distance(
+                self.ball_position, landing_position
+            )
+            required_distance = shot_distance + GROUP_SAFETY_DISTANCE_METERS
+
+            for other_position in other_group_positions:
+                distance_to_other = Calculations.get_distance(
+                    self.ball_position, other_position
+                )
+                if distance_to_other < required_distance:
+                    return False
+
+        return True
 
     def take_shot(
         self, hole_data: Dict[str, Any], wind_conditions: Dict[str, Any] = None

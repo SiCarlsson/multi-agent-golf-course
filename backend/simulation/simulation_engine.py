@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 from ..simulation.player_group import PlayerGroup
+from ..utils.calculations import Calculations
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,13 @@ class SimulationEngine:
                     ):
                         greenkeeper_pos = self.greenkeeper.position
                         wind_conditions = self.wind_agent.get_current_conditions()
+                        
+                        other_group_positions = self._get_other_group_positions_on_same_hole(
+                            group, player
+                        )
+                        
                         can_shoot = player.can_take_shot(
-                            hole_data, greenkeeper_pos, wind_conditions
+                            hole_data, greenkeeper_pos, wind_conditions, other_group_positions
                         )
 
                         if can_shoot:
@@ -81,7 +87,7 @@ class SimulationEngine:
                             )
                         else:
                             logger.info(
-                                f"Player {player.id} waiting - greenkeeper too close to landing zone"
+                                f"Player {player.id} waiting - group or greenkeeper in landing zone"
                             )
                     elif player.is_complete:
                         group.players_need_to_shoot.discard(group.current_turn_index)
@@ -100,6 +106,35 @@ class SimulationEngine:
                     group.mark_all_players_need_to_shoot()
 
         return self.get_state(flag_update)
+
+    def _get_other_group_positions_on_same_hole(
+        self, current_group: PlayerGroup, current_player
+    ) -> list[dict]:
+        """Get ball positions of players from other groups on the same hole that are ahead."""
+        positions = []
+        hole_data = self.holes[current_group.current_hole_number]
+        flag_position = hole_data["flag"]
+        
+        current_distance_to_flag = Calculations.get_distance(
+            current_player.ball_position, flag_position
+        )
+        
+        for other_group in self.player_groups:
+            if other_group.group_id == current_group.group_id:
+                continue
+            
+            if other_group.current_hole_number != current_group.current_hole_number:
+                continue
+            
+            for other_player in other_group.players:
+                if not other_player.is_complete:
+                    other_distance_to_flag = Calculations.get_distance(
+                        other_player.ball_position, flag_position
+                    )
+                    if other_distance_to_flag < current_distance_to_flag:
+                        positions.append(other_player.ball_position)
+        
+        return positions
 
     def _advance_group_to_next_hole(self, group: PlayerGroup):
         """Advance the group to the next hole or mark as complete."""
