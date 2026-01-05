@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import type { CourseData, GameState, Point } from "../models"
+import { PLAYER_SIZE_SCALE, BALL_SIZE_SCALE, FLAG_SIZE_SCALE, GREENKEEPER_SIZE_SCALE, COURSE_ROTATION_DEGREES, CANVAS_WIDTH, CANVAS_HEIGHT, COURSE_SIZE_SCALE, COURSE_CENTERPOINT_ADJUSTMENT_X, COURSE_CENTERPOINT_ADJUSTMENT_Y } from "../constants"
 
 const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSeconds }: { courseData: CourseData, gameState: GameState, errorMessage: string | null, tickIntervalSeconds: number }) => {
   // Canvas and layout
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
 
   // Animations
   const animationFrameRef = useRef<number | null>(null)
@@ -104,21 +104,6 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
     });
   }, [courseData]);
 
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.clientWidth
-        const height = Math.max(600, window.innerHeight - 200)
-        setDimensions({ width, height })
-      }
-    }
-
-    updateDimensions()
-    window.addEventListener('resize', updateDimensions)
-    return () => window.removeEventListener('resize', updateDimensions)
-  }, [])
-
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -163,16 +148,39 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
       const courseWidth = maxX - minX
       const courseHeight = maxY - minY
 
-      const padding = 50
-      const scale = Math.min(
-        (canvas.width - padding * 2) / courseWidth,
-        (canvas.height - padding * 2) / courseHeight
-      )
+      const rotationRadians = (COURSE_ROTATION_DEGREES * Math.PI) / 180
+      const cosAngle = Math.cos(rotationRadians)
+      const sinAngle = Math.sin(rotationRadians)
 
-      const transform = (point: Point): Point => ({
-        x: (point.x - minX) * scale + padding,
-        y: canvas.height - ((point.y - minY) * scale + padding)
-      })
+      // Calculate rotated course dimensions using rotation formula
+      const rotatedWidth = Math.abs(courseWidth * cosAngle) + Math.abs(courseHeight * sinAngle)
+      const rotatedHeight = Math.abs(courseWidth * sinAngle) + Math.abs(courseHeight * cosAngle)
+
+      const padding = 20
+      const scale = Math.min(
+        (canvas.width - padding * 2) / rotatedWidth,
+        (canvas.height - padding * 2) / rotatedHeight
+      ) * COURSE_SIZE_SCALE
+
+      const centerX = canvas.width / 2
+      const centerY = canvas.height / 2
+
+      // Calculate course center in original coordinates
+      const courseCenterX = minX + courseWidth / 2
+      const courseCenterY = minY + courseHeight / 2
+
+      const transform = (point: Point): Point => {
+        let x = (point.x - courseCenterX) * scale
+        let y = (point.y - courseCenterY) * scale
+        
+        const rotatedX = x * cosAngle - y * sinAngle
+        const rotatedY = x * sinAngle + y * cosAngle
+        
+        return {
+          x: centerX + rotatedX + COURSE_CENTERPOINT_ADJUSTMENT_X,
+          y: centerY - rotatedY + COURSE_CENTERPOINT_ADJUSTMENT_Y
+        }
+      }
 
       const drawPolygon = (points: Point[], fillStyle: string, strokeStyle?: string) => {
         if (points.length === 0) return
@@ -192,26 +200,120 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
         if (strokeStyle) {
           ctx.strokeStyle = strokeStyle
-          ctx.lineWidth = 1
+          ctx.lineWidth = 2
           ctx.stroke()
         }
       }
+
+      // Calculate convex hull with Graham scan algorithm
+      const convexHull = (points: Point[]): Point[] => {
+        if (points.length < 3) return points
+
+        let start = points[0]
+        for (const p of points) {
+          if (p.y < start.y || (p.y === start.y && p.x < start.x)) {
+            start = p
+          }
+        }
+
+        const sorted = [...points].sort((a, b) => {
+          if (a === start) return -1
+          if (b === start) return 1
+
+          const angleA = Math.atan2(a.y - start.y, a.x - start.x)
+          const angleB = Math.atan2(b.y - start.y, b.x - start.x)
+
+          if (angleA !== angleB) return angleA - angleB
+
+          const distA = (a.x - start.x) ** 2 + (a.y - start.y) ** 2
+          const distB = (b.x - start.x) ** 2 + (b.y - start.y) ** 2
+          return distA - distB
+        })
+
+        const hull: Point[] = [sorted[0], sorted[1]]
+
+        for (let i = 2; i < sorted.length; i++) {
+          let top = hull[hull.length - 1]
+          let nextToTop = hull[hull.length - 2]
+
+          while (hull.length >= 2) {
+            const cross = (top.x - nextToTop.x) * (sorted[i].y - nextToTop.y) -
+              (top.y - nextToTop.y) * (sorted[i].x - nextToTop.x)
+
+            if (cross > 0) break
+
+            hull.pop()
+            if (hull.length >= 2) {
+              top = hull[hull.length - 1]
+              nextToTop = hull[hull.length - 2]
+            }
+          }
+
+          hull.push(sorted[i])
+        }
+
+        return hull
+      }
+
+      const drawHoleBoundary = (hole: any) => {
+        const allHolePoints: Point[] = [
+          ...hole.fairway,
+          ...hole.green,
+          ...hole.tees.flat(),
+          ...(hole.bunkers?.flat() || []),
+        ]
+
+        if (allHolePoints.length === 0) return
+
+        const boundary = convexHull(allHolePoints)
+
+        if (boundary.length > 0) {
+          ctx.beginPath()
+          const first = transform(boundary[0])
+          ctx.moveTo(first.x, first.y)
+
+          for (let i = 1; i < boundary.length; i++) {
+            const p = transform(boundary[i])
+            ctx.lineTo(p.x, p.y)
+          }
+
+          ctx.closePath()
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
+          ctx.lineWidth = 2.5
+          ctx.setLineDash([8, 6])
+          ctx.stroke()
+          ctx.setLineDash([])
+        }
+      }
+
+      // Draw water
+      courseData.water?.forEach(waterPolygon => {
+        drawPolygon(waterPolygon, "#102c82")
+      })
+
+      // Draw bridges
+      courseData.bridges?.forEach(bridgePolygon => {
+        drawPolygon(bridgePolygon, "#8B4513")
+      })
 
       // Draw all holes
       courseData.holes.forEach((hole, index) => {
         const holeNumber = index + 1
 
+        // Draw hole boundary first (so it appears behind other elements)
+        drawHoleBoundary(hole)
+
         // Draw course elements
-        drawPolygon(hole.fairway, "#8fbc8f", "#6b8e6b")
+        drawPolygon(hole.fairway, "#8fbc8f")
 
         hole.bunkers?.forEach(bunker => {
-          drawPolygon(bunker, "#f4e4c1", "#d4c4a1")
+          drawPolygon(bunker, "#f4e4c1")
         })
 
-        drawPolygon(hole.green, "#228b22", "#1a6b1a")
+        drawPolygon(hole.green, "#228b22")
 
         hole.tees.forEach(tee => {
-          drawPolygon(tee, "#90ee90", "#70ce70")
+          drawPolygon(tee, "#90ee90")
         })
 
         if (hole.flag) {
@@ -219,7 +321,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
           ctx.fillStyle = "#ff0000"
           ctx.beginPath()
-          ctx.arc(flag.x, flag.y, 5, 0, Math.PI * 2)
+          ctx.arc(flag.x, flag.y, 5 * FLAG_SIZE_SCALE, 0, Math.PI * 2)
           ctx.fill()
 
           // Flag pole
@@ -227,15 +329,15 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           ctx.lineWidth = 2
           ctx.beginPath()
           ctx.moveTo(flag.x, flag.y)
-          ctx.lineTo(flag.x, flag.y - 20)
+          ctx.lineTo(flag.x, flag.y - 20 * FLAG_SIZE_SCALE)
           ctx.stroke()
 
           // Flag
           ctx.fillStyle = "#ff0000"
           ctx.beginPath()
-          ctx.moveTo(flag.x, flag.y - 20)
-          ctx.lineTo(flag.x + 15, flag.y - 15)
-          ctx.lineTo(flag.x, flag.y - 10)
+          ctx.moveTo(flag.x, flag.y - 20 * FLAG_SIZE_SCALE)
+          ctx.lineTo(flag.x + 15 * FLAG_SIZE_SCALE, flag.y - 15 * FLAG_SIZE_SCALE)
+          ctx.lineTo(flag.x, flag.y - 10 * FLAG_SIZE_SCALE)
           ctx.fill()
 
           // Draw hole number near flag
@@ -244,8 +346,8 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           ctx.textAlign = "center"
           ctx.strokeStyle = "#000000"
           ctx.lineWidth = 3
-          ctx.strokeText(`${holeNumber}`, flag.x, flag.y - 25)
-          ctx.fillText(`${holeNumber}`, flag.x, flag.y - 25)
+          ctx.strokeText(`${holeNumber}`, flag.x, flag.y - 30 * FLAG_SIZE_SCALE)
+          ctx.fillText(`${holeNumber}`, flag.x, flag.y - 30 * FLAG_SIZE_SCALE)
         }
 
       })
@@ -287,7 +389,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         // Player
         ctx.fillStyle = "#1787ff"
         ctx.beginPath()
-        ctx.arc(playerPos.x, playerPos.y, 7, 0, Math.PI * 2)
+        ctx.arc(playerPos.x, playerPos.y, 7 * PLAYER_SIZE_SCALE, 0, Math.PI * 2)
         ctx.fill()
         ctx.strokeStyle = "#000000"
         ctx.lineWidth = 2
@@ -296,7 +398,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         // Ball
         ctx.fillStyle = "#ffffff"
         ctx.beginPath()
-        ctx.arc(ballPos.x, ballPos.y, 4, 0, Math.PI * 2)
+        ctx.arc(ballPos.x, ballPos.y, 4 * BALL_SIZE_SCALE, 0, Math.PI * 2)
         ctx.fill()
         ctx.strokeStyle = "#000000"
         ctx.lineWidth = 2
@@ -325,7 +427,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           // Greenkeeper body (green circle)
           ctx.fillStyle = "#22c55e"
           ctx.beginPath()
-          ctx.arc(gkPos.x, gkPos.y, 8, 0, Math.PI * 2)
+          ctx.arc(gkPos.x, gkPos.y, 8 * GREENKEEPER_SIZE_SCALE, 0, Math.PI * 2)
           ctx.fill()
           ctx.strokeStyle = "#000000"
           ctx.lineWidth = 2
@@ -335,17 +437,16 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
       // Draw wind indicator in top-left corner
       const wind = gameState.weather.wind
-      const centerX = 60
-      const centerY = 50
+      const windCenterX = 60
+      const windCenterY = 50
       const arrowLength = 35
 
       const windAngle = (wind.direction + 180) * Math.PI / 180
 
-      // Calculate arrow start and end points (centered)
-      const startX = centerX - Math.sin(windAngle) * (arrowLength / 2)
-      const startY = centerY + Math.cos(windAngle) * (arrowLength / 2)
-      const endX = centerX + Math.sin(windAngle) * (arrowLength / 2)
-      const endY = centerY - Math.cos(windAngle) * (arrowLength / 2)
+      const startX = windCenterX - Math.sin(windAngle) * (arrowLength / 2)
+      const startY = windCenterY + Math.cos(windAngle) * (arrowLength / 2)
+      const endX = windCenterX + Math.sin(windAngle) * (arrowLength / 2)
+      const endY = windCenterY - Math.cos(windAngle) * (arrowLength / 2)
 
       // Draw arrow shaft
       ctx.strokeStyle = "#ffffff"
@@ -377,8 +478,8 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
       ctx.fillStyle = "#ffffff"
       ctx.font = "14px monospace"
       ctx.textAlign = "center"
-      ctx.fillText(`${wind.speed.toFixed(1)} m/s`, centerX, centerY + 45)
-      ctx.fillText(`${wind.direction.toFixed(0)}°`, centerX, centerY + 63)
+      ctx.fillText(`${wind.speed.toFixed(1)} m/s`, windCenterX, windCenterY + 45)
+      ctx.fillText(`${wind.direction.toFixed(0)}°`, windCenterX, windCenterY + 63)
 
       animationFrameRef.current = requestAnimationFrame(animate)
     }
@@ -390,15 +491,15 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [dimensions, courseData, tickIntervalSeconds, errorMessage])
+  }, [courseData, tickIntervalSeconds, errorMessage])
 
   return (
-    <div ref={containerRef} className="px-5 pt-5 w-full">
+    <div ref={containerRef} className="px-5 pt-5 w-full flex justify-center">
       <canvas
         ref={canvasRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        className="border border-gray-300 bg-emerald-900/80 w-full h-auto"
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="border border-gray-300 bg-emerald-900/80"
       />
     </div>
   )
