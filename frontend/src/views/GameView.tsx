@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
 import type { CourseData, GameState, Point } from "../models"
+import { PLAYER_SIZE_SCALE, BALL_SIZE_SCALE, FLAG_SIZE_SCALE, GREENKEEPER_SIZE_SCALE } from "../constants"
 
 const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSeconds }: { courseData: CourseData, gameState: GameState, errorMessage: string | null, tickIntervalSeconds: number }) => {
   // Canvas and layout
@@ -192,8 +193,89 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
         if (strokeStyle) {
           ctx.strokeStyle = strokeStyle
-          ctx.lineWidth = 1
+          ctx.lineWidth = 2
           ctx.stroke()
+        }
+      }
+
+      // Calculate convex hull using Graham scan algorithm
+      const convexHull = (points: Point[]): Point[] => {
+        if (points.length < 3) return points
+
+        let start = points[0]
+        for (const p of points) {
+          if (p.y < start.y || (p.y === start.y && p.x < start.x)) {
+            start = p
+          }
+        }
+
+        const sorted = [...points].sort((a, b) => {
+          if (a === start) return -1
+          if (b === start) return 1
+
+          const angleA = Math.atan2(a.y - start.y, a.x - start.x)
+          const angleB = Math.atan2(b.y - start.y, b.x - start.x)
+
+          if (angleA !== angleB) return angleA - angleB
+
+          const distA = (a.x - start.x) ** 2 + (a.y - start.y) ** 2
+          const distB = (b.x - start.x) ** 2 + (b.y - start.y) ** 2
+          return distA - distB
+        })
+
+        const hull: Point[] = [sorted[0], sorted[1]]
+
+        for (let i = 2; i < sorted.length; i++) {
+          let top = hull[hull.length - 1]
+          let nextToTop = hull[hull.length - 2]
+
+          while (hull.length >= 2) {
+            const cross = (top.x - nextToTop.x) * (sorted[i].y - nextToTop.y) -
+              (top.y - nextToTop.y) * (sorted[i].x - nextToTop.x)
+
+            if (cross > 0) break
+
+            hull.pop()
+            if (hull.length >= 2) {
+              top = hull[hull.length - 1]
+              nextToTop = hull[hull.length - 2]
+            }
+          }
+
+          hull.push(sorted[i])
+        }
+
+        return hull
+      }
+
+      const drawHoleBoundary = (hole: any) => {
+        const allHolePoints: Point[] = [
+          ...hole.fairway,
+          ...hole.green,
+          ...hole.tees.flat(),
+          ...(hole.bunkers?.flat() || []),
+        ]
+
+        if (allHolePoints.length === 0) return
+
+        const boundary = convexHull(allHolePoints)
+
+        if (boundary.length > 0) {
+          ctx.beginPath()
+          const first = transform(boundary[0])
+          ctx.moveTo(first.x, first.y)
+
+          for (let i = 1; i < boundary.length; i++) {
+            const p = transform(boundary[i])
+            ctx.lineTo(p.x, p.y)
+          }
+
+          ctx.closePath()
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
+          ctx.lineWidth = 2.5
+          ctx.setLineDash([8, 6])
+          ctx.stroke()
+          ctx.setLineDash([])
         }
       }
 
@@ -201,17 +283,20 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
       courseData.holes.forEach((hole, index) => {
         const holeNumber = index + 1
 
+        // Draw hole boundary first (so it appears behind other elements)
+        drawHoleBoundary(hole)
+
         // Draw course elements
-        drawPolygon(hole.fairway, "#8fbc8f", "#6b8e6b")
+        drawPolygon(hole.fairway, "#8fbc8f")
 
         hole.bunkers?.forEach(bunker => {
-          drawPolygon(bunker, "#f4e4c1", "#d4c4a1")
+          drawPolygon(bunker, "#f4e4c1")
         })
 
-        drawPolygon(hole.green, "#228b22", "#1a6b1a")
+        drawPolygon(hole.green, "#228b22")
 
         hole.tees.forEach(tee => {
-          drawPolygon(tee, "#90ee90", "#70ce70")
+          drawPolygon(tee, "#90ee90")
         })
 
         if (hole.flag) {
@@ -219,7 +304,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
 
           ctx.fillStyle = "#ff0000"
           ctx.beginPath()
-          ctx.arc(flag.x, flag.y, 5, 0, Math.PI * 2)
+          ctx.arc(flag.x, flag.y, 5 * FLAG_SIZE_SCALE, 0, Math.PI * 2)
           ctx.fill()
 
           // Flag pole
@@ -227,15 +312,15 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           ctx.lineWidth = 2
           ctx.beginPath()
           ctx.moveTo(flag.x, flag.y)
-          ctx.lineTo(flag.x, flag.y - 20)
+          ctx.lineTo(flag.x, flag.y - 20 * FLAG_SIZE_SCALE)
           ctx.stroke()
 
           // Flag
           ctx.fillStyle = "#ff0000"
           ctx.beginPath()
-          ctx.moveTo(flag.x, flag.y - 20)
-          ctx.lineTo(flag.x + 15, flag.y - 15)
-          ctx.lineTo(flag.x, flag.y - 10)
+          ctx.moveTo(flag.x, flag.y - 20 * FLAG_SIZE_SCALE)
+          ctx.lineTo(flag.x + 15 * FLAG_SIZE_SCALE, flag.y - 15 * FLAG_SIZE_SCALE)
+          ctx.lineTo(flag.x, flag.y - 10 * FLAG_SIZE_SCALE)
           ctx.fill()
 
           // Draw hole number near flag
@@ -244,8 +329,8 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           ctx.textAlign = "center"
           ctx.strokeStyle = "#000000"
           ctx.lineWidth = 3
-          ctx.strokeText(`${holeNumber}`, flag.x, flag.y - 25)
-          ctx.fillText(`${holeNumber}`, flag.x, flag.y - 25)
+          ctx.strokeText(`${holeNumber}`, flag.x, flag.y - 25 * FLAG_SIZE_SCALE)
+          ctx.fillText(`${holeNumber}`, flag.x, flag.y - 25 * FLAG_SIZE_SCALE)
         }
 
       })
@@ -287,7 +372,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         // Player
         ctx.fillStyle = "#1787ff"
         ctx.beginPath()
-        ctx.arc(playerPos.x, playerPos.y, 7, 0, Math.PI * 2)
+        ctx.arc(playerPos.x, playerPos.y, 7 * PLAYER_SIZE_SCALE, 0, Math.PI * 2)
         ctx.fill()
         ctx.strokeStyle = "#000000"
         ctx.lineWidth = 2
@@ -296,7 +381,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         // Ball
         ctx.fillStyle = "#ffffff"
         ctx.beginPath()
-        ctx.arc(ballPos.x, ballPos.y, 4, 0, Math.PI * 2)
+        ctx.arc(ballPos.x, ballPos.y, 4 * BALL_SIZE_SCALE, 0, Math.PI * 2)
         ctx.fill()
         ctx.strokeStyle = "#000000"
         ctx.lineWidth = 2
@@ -325,7 +410,7 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
           // Greenkeeper body (green circle)
           ctx.fillStyle = "#22c55e"
           ctx.beginPath()
-          ctx.arc(gkPos.x, gkPos.y, 8, 0, Math.PI * 2)
+          ctx.arc(gkPos.x, gkPos.y, 8 * GREENKEEPER_SIZE_SCALE, 0, Math.PI * 2)
           ctx.fill()
           ctx.strokeStyle = "#000000"
           ctx.lineWidth = 2
