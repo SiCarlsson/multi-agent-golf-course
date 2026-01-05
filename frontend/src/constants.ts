@@ -6,14 +6,14 @@ export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 800;
 
 // Rotation angle for the course in degrees
-export const COURSE_ROTATION_DEGREES = -30;
+export const COURSE_ROTATION_DEGREES = -29.5;
 
 // Manual centerpoint adjustments (in pixels)
-export const COURSE_CENTERPOINT_ADJUSTMENT_X = 35; // Higher is right
-export const COURSE_CENTERPOINT_ADJUSTMENT_Y = 85; // Higer is lower
+export const COURSE_CENTERPOINT_ADJUSTMENT_X = 40; // Higher is right
+export const COURSE_CENTERPOINT_ADJUSTMENT_Y = 95; // Higer is lower
 
 // Scale factor for the course size (manual adjustment)
-export const COURSE_SIZE_SCALE = 1.6;
+export const COURSE_SIZE_SCALE = 1.7;
 
 // Scale factor for greenkeeper size
 export const GREENKEEPER_SIZE_SCALE = 0.6;

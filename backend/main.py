@@ -77,7 +77,9 @@ async def lifespan(app: FastAPI):
     # Sample player and group
     player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
     player_2 = PlayerAgent(id=2, accuracy=0.8, strength=0.85)
-    group_1 = PlayerGroup(id=1, players=[player_1, player_2], starting_hole=1, tee_time=0)
+    group_1 = PlayerGroup(
+        id=1, players=[player_1, player_2], starting_hole=1, tee_time=0
+    )
 
     # Position player and ball at tee
     tee_box = simulation_engine.holes[1]["tees"][3]
@@ -92,7 +94,9 @@ async def lifespan(app: FastAPI):
     # Add a second group of two players
     player_3 = PlayerAgent(id=3, accuracy=0.75, strength=0.9)
     player_4 = PlayerAgent(id=4, accuracy=0.85, strength=0.8)
-    group_2 = PlayerGroup(id=2, players=[player_3, player_4], starting_hole=1, tee_time=0)
+    group_2 = PlayerGroup(
+        id=2, players=[player_3, player_4], starting_hole=1, tee_time=0
+    )
 
     # Position second group players at tee
     player_3.player_position = tee_position.copy()
@@ -131,11 +135,23 @@ async def websocket_endpoint(websocket: WebSocket):
                 hole_data = json.load(f)
                 holes.append(hole_data)
 
+        # Load course-wide features
+        course_features = {}
+        for feature_name in ["water", "bridges"]:
+            feature_file = course_data_dir / f"{feature_name}.json"
+            with open(feature_file, "r") as f:
+                feature_json = json.load(f)
+                course_features[feature_name] = feature_json.get(feature_name, [])
+
         await websocket.send_text(
             json.dumps(
                 {
                     "type": "course_data",
-                    "data": {"holes": holes, "tick_interval": TICK_INTERVAL_SECONDS},
+                    "data": {
+                        "holes": holes,
+                        **course_features,
+                        "tick_interval": TICK_INTERVAL_SECONDS,
+                    },
                 }
             )
         )

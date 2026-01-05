@@ -17,4 +17,6 @@ export interface GameState {
 
 export interface CourseData {
 	holes: Hole[];
+	water: Point[][];
+	bridges: Point[][];
 }

@@ -63,7 +63,11 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
             const message = JSON.parse(event.data)
 
             if (message.type === 'course_data') {
-              setCourseData({ holes: message.data.holes });
+              setCourseData({ 
+                holes: message.data.holes,
+                water: message.data.water || [],
+                bridges: message.data.bridges || []
+              });
               setTickIntervalSeconds(message.data.tick_interval);
             } else if (message.type === 'gamestate') {
               runInAction(() => {
@@ -104,7 +108,7 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
                         flag: backendData.flag_update!.position
                       };
                     }
-                    return { holes: updatedHoles };
+                    return { holes: updatedHoles, water: prevCourseData.water, bridges: prevCourseData.bridges };
                   });
                 }
 
@@ -124,7 +128,6 @@ const GamePresenter = ({ gameState }: { gameState: GameState }) => {
         ws.onclose = () => {
           console.log('WebSocket disconnected');
           setErrorMessage('Backend connection lost. Reconnecting...');
-          // Attempt to reconnect after 3 seconds
           reconnectTimeout = setTimeout(connectWebSocket, 3000);
         };
       } catch (error) {

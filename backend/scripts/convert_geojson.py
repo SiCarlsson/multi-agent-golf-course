@@ -68,15 +68,7 @@ def extract_polygons(
 def convert_hole_data(
     hole_number: int, origin_utm: Optional[tuple[float, float]] = None
 ) -> tuple[Dict[str, Any], Optional[tuple[float, float]]]:
-    """Convert raw GeoJSON files for a hole to frontend format.
-
-    Args:
-        hole_number: The hole number to convert
-        origin_utm: Optional UTM origin to maintain spatial relationships between holes
-
-    Returns:
-        tuple: (hole data dict, origin_utm used for conversion)
-    """
+    """Convert raw GeoJSON files for a hole to frontend format."""
     raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
     hole_dir = raw_data_dir / f"hole_{hole_number:02d}"
 
@@ -157,6 +149,44 @@ def convert_hole_data(
     return hole_data, origin_utm
 
 
+def convert_course_feature(
+    feature_name: str, origin_utm: tuple[float, float]
+) -> Dict[str, Any]:
+    """Convert a course-wide GeoJSON feature (water, bridges, etc.) to frontend format."""
+    raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
+    feature_path = raw_data_dir / f"{feature_name}.geojson"
+
+    if not feature_path.exists():
+        logger.warning(f"No {feature_name}.geojson file found")
+        return {feature_name: []}
+
+    if feature_path.stat().st_size == 0:
+        logger.warning(f"{feature_name}.geojson is empty")
+        return {feature_name: []}
+
+    with open(feature_path, "r") as f:
+        feature_geojson = json.load(f)
+
+    feature_polygons = extract_polygons(feature_geojson)
+    feature_data = []
+
+    for polygon in feature_polygons:
+        polygon_points, _ = convert_coordinates_to_points(polygon, origin_utm)
+        feature_data.append(polygon_points)
+
+    feature_output = {feature_name: feature_data}
+
+    output_dir = Path(__file__).parent.parent / "data" / "course"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"{feature_name}.json"
+
+    with open(output_file, "w") as f:
+        json.dump(feature_output, f, indent=4)
+
+    logger.info(f"Converted {len(feature_data)} {feature_name} polygons")
+    return feature_output
+
+
 def convert_all_holes() -> None:
     """Convert all available holes from raw GeoJSON to frontend format."""
     raw_data_dir = Path(__file__).parent.parent / "data" / "geojson"
@@ -174,3 +204,7 @@ def convert_all_holes() -> None:
         logger.info(f"Converted hole {hole_number}")
 
     logger.info(f"Successfully converted {converted_count} holes")
+
+    if origin_utm:
+        for feature in ["water", "bridges"]:
+            convert_course_feature(feature, origin_utm)

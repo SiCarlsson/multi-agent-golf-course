@@ -286,6 +286,16 @@ const GameView = observer(({ courseData, gameState, errorMessage, tickIntervalSe
         }
       }
 
+      // Draw water
+      courseData.water?.forEach(waterPolygon => {
+        drawPolygon(waterPolygon, "#102c82")
+      })
+
+      // Draw bridges
+      courseData.bridges?.forEach(bridgePolygon => {
+        drawPolygon(bridgePolygon, "#8B4513")
+      })
+
       // Draw all holes
       courseData.holes.forEach((hole, index) => {
         const holeNumber = index + 1
