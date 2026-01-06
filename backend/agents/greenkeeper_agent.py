@@ -43,13 +43,12 @@ class GreenkeeperAgent:
         self.last_hole = None
         self.final_flag_selected = False
 
-        # Initialize timers for each hole
-        # For testing: Only holes 16, 17, and 12 need service at start
+        # Initialize timers for each hole - all holes need service at start
         self.hole_timers = {
-            hole_num: HOLE_SERVICE_INTERVAL_TICKS if hole_num in [16, 17, 12] else 0
+            hole_num: HOLE_SERVICE_INTERVAL_TICKS
             for hole_num in range(1, num_holes + 1)
         }
-        self.holes_needing_service = {16, 17, 12}
+        self.holes_needing_service = set(range(1, num_holes + 1))
 
     def _select_closest_hole_needing_service(self) -> Optional[int]:
         """Rule: Select the closest hole that needs service."""

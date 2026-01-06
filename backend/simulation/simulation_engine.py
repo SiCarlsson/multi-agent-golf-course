@@ -62,16 +62,17 @@ class SimulationEngine:
         if not self.holes:
             return
 
-        cache_file = Path(__file__).parent.parent / "data" / "navigation_paths_cache.json"
-        
+        cache_file = (
+            Path(__file__).parent.parent / "data" / "navigation_paths_cache.json"
+        )
+
         if cache_file.exists():
             try:
                 logger.info("Loading greenkeeper paths from cache...")
                 with open(cache_file, "r") as f:
                     cache_data = json.load(f)
                     self.greenkeeper_paths = {
-                        tuple(map(int, k.split(','))): v 
-                        for k, v in cache_data.items()
+                        tuple(map(int, k.split(","))): v for k, v in cache_data.items()
                     }
                 logger.info(f"Loaded {len(self.greenkeeper_paths)} paths from cache")
                 return
@@ -81,12 +82,13 @@ class SimulationEngine:
         logger.info("Computing greenkeeper paths between all holes...")
         pathfinder = PathFinder(self.water, self.bridges, self.holes)
         self.greenkeeper_paths = pathfinder.compute_all_paths(self.holes)
-        logger.info(f"Computed {len(self.greenkeeper_paths)} paths for greenkeeper navigation")
-        
+        logger.info(
+            f"Computed {len(self.greenkeeper_paths)} paths for greenkeeper navigation"
+        )
+
         try:
             cache_data = {
-                f"{k[0]},{k[1]}": v 
-                for k, v in self.greenkeeper_paths.items()
+                f"{k[0]},{k[1]}": v for k, v in self.greenkeeper_paths.items()
             }
             with open(cache_file, "w") as f:
                 json.dump(cache_data, f)
