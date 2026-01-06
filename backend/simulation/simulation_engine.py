@@ -196,7 +196,7 @@ class SimulationEngine:
                                 f"Distance to flag: {flag_distance:.2f}m, Strokes: {player.strokes}"
                             )
                             shot_result = player.take_shot(
-                                hole_data, wind_conditions, self.water
+                                hole_data, wind_conditions, self.water, group.current_hole_number, self.holes
                             )
                             group.players_need_to_shoot.discard(
                                 group.current_turn_index

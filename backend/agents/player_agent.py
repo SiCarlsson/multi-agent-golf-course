@@ -110,6 +110,8 @@ class PlayerAgent:
         hole_data: Dict[str, Any],
         wind_conditions: Dict[str, Any] = None,
         water: list = None,
+        current_hole_number: int = None,
+        all_holes: Dict[int, Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Execute one shot using utility-based decision making."""
         self.strokes += 1
@@ -132,6 +134,8 @@ class PlayerAgent:
             wind_conditions,
             self.accuracy,
             water,
+            current_hole_number,
+            all_holes,
         )
 
         club = best_shot["club"]
@@ -183,7 +187,7 @@ class PlayerAgent:
             logger.warning(
                 f"Player {self.id} ball landed in WATER at ({self.ball_position['x']:.2f}, {self.ball_position['y']:.2f})"
             )
-            
+
             entry_point = None
             if water:
                 for water_polygon in water:
@@ -193,19 +197,25 @@ class PlayerAgent:
                     if intersection:
                         entry_point = intersection
                         break
-            
+
             if entry_point:
-                distance_to_entry = Calculations.get_distance(old_ball_position, entry_point)
+                distance_to_entry = Calculations.get_distance(
+                    old_ball_position, entry_point
+                )
                 if distance_to_entry > 1.0:
-                    direction = Calculations.get_direction(old_ball_position, entry_point)
+                    direction = Calculations.get_direction(
+                        old_ball_position, entry_point
+                    )
                     drop_distance = distance_to_entry - 2.0
                     self.ball_position = {
-                        "x": old_ball_position["x"] + drop_distance * math.cos(direction),
-                        "y": old_ball_position["y"] + drop_distance * math.sin(direction),
+                        "x": old_ball_position["x"]
+                        + drop_distance * math.cos(direction),
+                        "y": old_ball_position["y"]
+                        + drop_distance * math.sin(direction),
                     }
                 else:
                     self.ball_position = old_ball_position.copy()
-                
+
                 logger.warning(
                     f"Player {self.id} PENALTY: Ball dropped at ({self.ball_position['x']:.2f}, {self.ball_position['y']:.2f}) "
                     f"- 2m before water entry point"
@@ -215,11 +225,15 @@ class PlayerAgent:
                 logger.warning(
                     f"Player {self.id} PENALTY: Ball dropped at original position (couldn't find entry point)"
                 )
-            
+
             self.strokes += 1
-            logger.warning(f"Player {self.id} penalty stroke added. Total strokes: {self.strokes}")
-            
-            self.current_lie = ShotUtility.determine_lie(self.ball_position, hole_data, water)
+            logger.warning(
+                f"Player {self.id} penalty stroke added. Total strokes: {self.strokes}"
+            )
+
+            self.current_lie = ShotUtility.determine_lie(
+                self.ball_position, hole_data, water
+            )
             if self.current_lie == "water":
                 self.current_lie = "rough"
             logger.info(f"Player {self.id} dropped ball lie: {self.current_lie}")

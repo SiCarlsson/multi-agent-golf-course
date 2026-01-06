@@ -1,10 +1,10 @@
 ### Simulation constants
 
 # Time between simulation ticks in seconds (sent to frontend for animation timing)
-TICK_INTERVAL_SECONDS = 1.0
+TICK_INTERVAL_SECONDS = 2.5
 
 # Player walking speed in meters per tick
-WALKING_SPEED = 100.0
+WALKING_SPEED = 75.0
 
 # Determine acceptable distance to hole for complete in meters
 HOLE_COMPLETION_DISTANCE = 1.5
@@ -18,6 +18,7 @@ FLAG_PLACEMENT_DURATION_TICKS = 3
 # Number of ticks before a hole needs flag service
 HOLE_SERVICE_INTERVAL_TICKS = 180.0
 
+# TODO: Is this used?
 # Distance in meters greenkeeper maintains from hole when idle
 GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
 
@@ -25,10 +26,10 @@ GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
 GREENKEEPER_SAFETY_DISTANCE_METERS = 50.0
 
 # Safety distance in meters
-GROUP_SAFETY_DISTANCE_METERS = 150.0
+GROUP_SAFETY_DISTANCE_METERS = 250.0
 
 # Base maximum distance for a club in meters
-BASE_MAX_DISTANCE = 225
+BASE_MAX_DISTANCE = 260.0
 
 # Number of steps to evaluate for shot options
 NUMBER_OF_POWER_STEPS_TO_VALIDATE = 10
@@ -53,11 +54,11 @@ LIE_MULTIPLIERS_DISTANCE = {
 
 # Changes the utility based on the lie - Higher is worse
 LIE_MULTIPLIERS_UTILITY = {
-    "green": 0.5,
-    "fairway": 1.0,
-    "tee": 1.0,
-    "rough": 2.0,
-    "bunker": 3.0,
+    "green": 0.1,
+    "fairway": 0.5,
+    "tee": 2.0,
+    "rough": 3.0,
+    "bunker": 4.0,
     "water": 5.0,
 }
 
@@ -69,3 +70,6 @@ WIND_EFFECT_FACTOR = 0.02
 
 # Distance required in order to spawn a new group from the tee in meters
 MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP = 50.0
+
+# Utility penalty for shots taken from another hole's features
+WRONG_HOLE_UTILITY_PENALTY = 1000.0

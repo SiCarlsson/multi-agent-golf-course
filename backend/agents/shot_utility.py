@@ -10,6 +10,7 @@ from ..constants import (
     LIE_MULTIPLIERS_UTILITY,
     NUMBER_OF_POWER_STEPS_TO_VALIDATE,
     NUMBER_OF_DIRECTION_STEPS_TO_VALIDATE,
+    WRONG_HOLE_UTILITY_PENALTY,
 )
 from ..utils.calculations import Calculations
 
@@ -26,6 +27,8 @@ class ShotUtility:
         wind_conditions: Dict[str, Any] = None,
         player_accuracy: float = 1.0,
         water: List[List[Dict[str, float]]] = None,
+        current_hole_number: int = None,
+        all_holes: Dict[int, Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         flag = hole_data["flag"]
         distance_to_flag = Calculations.get_distance(ball_position, flag)
@@ -50,7 +53,9 @@ class ShotUtility:
         total_shots = len(shot_options)
 
         for shot in shot_options:
-            utility = ShotUtility._calculate_shot_utility(shot, hole_data, water)
+            utility = ShotUtility._calculate_shot_utility(
+                shot, hole_data, current_hole_number, all_holes
+            )
             shot["utility"] = utility
 
             if shot["landing_lie"] == "water":
@@ -130,7 +135,8 @@ class ShotUtility:
     def _calculate_shot_utility(
         shot: Dict[str, Any],
         hole_data: Dict[str, Any],
-        water: List[List[Dict[str, float]]] = None,
+        current_hole_number: int = None,
+        all_holes: Dict[int, Dict[str, Any]] = None,
     ) -> float:
         """Calculate utility value for a shot option."""
         flag = hole_data["flag"]
@@ -154,6 +160,23 @@ class ShotUtility:
         lie_adjustment = LIE_MULTIPLIERS_UTILITY.get(landing_lie, 1.0)
 
         total_utility = distance_utility * lie_adjustment
+
+        if current_hole_number and all_holes:
+            for hole_num, hole in all_holes.items():
+                if hole_num == current_hole_number:
+                    continue
+
+                if "fairway" in hole and Calculations.point_in_polygon(
+                    landing_pos, hole["fairway"]
+                ):
+                    total_utility -= WRONG_HOLE_UTILITY_PENALTY
+                    break
+
+                if "green" in hole and Calculations.point_in_polygon(
+                    landing_pos, hole["green"]
+                ):
+                    total_utility -= WRONG_HOLE_UTILITY_PENALTY
+                    break
 
         return total_utility
 
@@ -235,7 +258,6 @@ class ShotUtility:
         ):
             return "fairway"
 
-        # Check for water
         if water:
             for water_polygon in water:
                 if Calculations.point_in_polygon(position, water_polygon):
