@@ -20,17 +20,6 @@ const RootLayout = () => {
           Course
         </NavLink>
         <NavLink
-          to="/statistics"
-          className={({ isActive }) =>
-            `mx-6 px-2 py-2 font-medium transition-all border-b-2 ${isActive
-              ? 'text-green-700 border-green-600'
-              : 'text-gray-600 border-transparent hover:text-green-600 hover:border-green-300'
-            }`
-          }
-        >
-          Statistics
-        </NavLink>
-        <NavLink
           to="/about"
           className={({ isActive }) =>
             `mx-6 px-2 py-2 font-medium transition-all border-b-2 ${isActive

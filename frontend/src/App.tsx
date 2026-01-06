@@ -8,7 +8,6 @@ import {
 } from "react-router-dom"
 
 import AboutPresenter from "./presenters/AboutPresenter.tsx"
-import StatisticsPresenter from "./presenters/StatisticsPresenter.tsx"
 
 import RootLayout from "./layout/RootLayout"
 import GamePresenter from "./presenters/GamePresenter.tsx"
@@ -19,7 +18,6 @@ const App = observer(({ gameModel }: { gameModel: GameState }) => {
       <Route path="/" element={<RootLayout />}>
         <Route index element={<GamePresenter gameState={gameModel} />} />
         <Route path="about" element={<AboutPresenter />} />
-        <Route path="statistics" element={<StatisticsPresenter />} />
       </Route>
     )
   )
