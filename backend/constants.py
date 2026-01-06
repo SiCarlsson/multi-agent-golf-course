@@ -4,10 +4,10 @@
 TICK_INTERVAL_SECONDS = 1.0
 
 # Player walking speed in meters per tick
-WALKING_SPEED = 30.0
+WALKING_SPEED = 100.0
 
 # Determine acceptable distance to hole for complete in meters
-HOLE_COMPLETION_DISTANCE = 1.0
+HOLE_COMPLETION_DISTANCE = 1.5
 
 # Determine player to ball distance for shot to be taken in meters
 SHOT_TAKING_DISTANCE = 1.0
@@ -16,7 +16,7 @@ SHOT_TAKING_DISTANCE = 1.0
 FLAG_PLACEMENT_DURATION_TICKS = 3
 
 # Number of ticks before a hole needs flag service
-HOLE_SERVICE_INTERVAL_TICKS = 15
+HOLE_SERVICE_INTERVAL_TICKS = 180.0
 
 # Distance in meters greenkeeper maintains from hole when idle
 GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
@@ -58,6 +58,7 @@ LIE_MULTIPLIERS_UTILITY = {
     "tee": 1.0,
     "rough": 2.0,
     "bunker": 3.0,
+    "water": 5.0,
 }
 
 # Ticks between wind condition updates
@@ -65,3 +66,6 @@ WIND_UPDATE_TICKER_INTERVAL = 1
 
 # Wind effect factor in percentage effect per m/s of wind speed
 WIND_EFFECT_FACTOR = 0.02
+
+# Distance required in order to spawn a new group from the tee in meters
+MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP = 50.0

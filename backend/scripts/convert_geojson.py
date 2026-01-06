@@ -201,7 +201,6 @@ def convert_all_holes() -> None:
         hole_number = int(hole_dir.name.split("_")[1])
         _, origin_utm = convert_hole_data(hole_number, origin_utm)
         converted_count += 1
-        logger.info(f"Converted hole {hole_number}")
 
     logger.info(f"Successfully converted {converted_count} holes")
 

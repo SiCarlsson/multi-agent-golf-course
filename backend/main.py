@@ -1,4 +1,5 @@
 import json
+import random
 import asyncio
 import logging
 
@@ -48,14 +49,10 @@ async def run_simulation():
     while True:
         await asyncio.sleep(TICK_INTERVAL_SECONDS)
 
-        if simulation_engine and simulation_engine.player_groups:
-            if not all(group.is_complete for group in simulation_engine.player_groups):
-                logger.info("TICK")
-                game_state = simulation_engine.tick()
-                await broadcast_game_state(game_state)
-            else:
-                logger.info("Simulation complete for all groups.")
-                break
+        if simulation_engine:
+            logger.info("TICK")
+            game_state = simulation_engine.tick()
+            await broadcast_game_state(game_state)
 
 
 @asynccontextmanager
@@ -67,44 +64,17 @@ async def lifespan(app: FastAPI):
     simulation_engine = SimulationEngine()
 
     greenkeeper = GreenkeeperAgent(
-        id=1, num_holes=simulation_engine.num_holes, holes_data=simulation_engine.holes
+        id=1, 
+        num_holes=simulation_engine.num_holes, 
+        holes_data=simulation_engine.holes,
+        navigation_paths=simulation_engine.greenkeeper_paths,
+        water=simulation_engine.water,
+        bridges=simulation_engine.bridges
     )
     simulation_engine.greenkeeper = greenkeeper
 
     wind_agent = WindAgent()
     simulation_engine.wind_agent = wind_agent
-
-    # Sample player and group
-    player_1 = PlayerAgent(id=1, accuracy=0.8, strength=0.85)
-    player_2 = PlayerAgent(id=2, accuracy=0.8, strength=0.85)
-    group_1 = PlayerGroup(
-        id=1, players=[player_1, player_2], starting_hole=1, tee_time=0
-    )
-
-    # Position player and ball at tee
-    tee_box = simulation_engine.holes[1]["tees"][3]
-    tee_position = simulation_engine.get_tee_position(tee_box)
-    player_1.player_position = tee_position.copy()
-    player_1.ball_position = tee_position.copy()
-    player_2.player_position = tee_position.copy()
-    player_2.ball_position = tee_position.copy()
-
-    simulation_engine.player_groups.append(group_1)
-
-    # Add a second group of two players
-    player_3 = PlayerAgent(id=3, accuracy=0.75, strength=0.9)
-    player_4 = PlayerAgent(id=4, accuracy=0.85, strength=0.8)
-    group_2 = PlayerGroup(
-        id=2, players=[player_3, player_4], starting_hole=1, tee_time=0
-    )
-
-    # Position second group players at tee
-    player_3.player_position = tee_position.copy()
-    player_3.ball_position = tee_position.copy()
-    player_4.player_position = tee_position.copy()
-    player_4.ball_position = tee_position.copy()
-
-    simulation_engine.player_groups.append(group_2)
 
     simulation_task = asyncio.create_task(run_simulation())
 
