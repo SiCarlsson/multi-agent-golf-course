@@ -1,10 +1,15 @@
 import json
 import logging
+import random
+
 from pathlib import Path
 
-from ..simulation.player_group import PlayerGroup
-from ..utils.calculations import Calculations
+from ..agents.player_agent import PlayerAgent
 from ..utils.pathfinding import PathFinder
+from ..utils.calculations import Calculations
+from ..simulation.player_group import PlayerGroup
+from ..constants import MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,10 @@ class SimulationEngine:
         self.water = []
         self.bridges = []
         self.greenkeeper_paths = {}
+        
+        # Dynamic group spawning
+        self.next_group_id = 1
+        self.next_player_id = 1
 
         self._load_all_holes()
         self._load_course_features()
@@ -100,6 +109,9 @@ class SimulationEngine:
         """Process one simulation step for all active groups."""
         self.tick_count += 1
         flag_update = None
+        
+        if self.can_spawn_new_group():
+            self.spawn_new_group()
 
         # Update wind conditions
         if self.wind_agent:
@@ -128,7 +140,10 @@ class SimulationEngine:
                     logger.info(
                         f"[Tick {self.tick_count}] All players in Group {group.group_id} complete! Advancing to next hole."
                     )
-                    self._advance_group_to_next_hole(group)
+                    completed_course = self._advance_group_to_next_hole(group)
+                    if completed_course:
+                        self.player_groups.remove(group)
+                        logger.info(f"Group {group.group_id} removed from course after completing all holes")
                     continue
 
                 if not group.all_shots_taken_this_round():
@@ -270,7 +285,7 @@ class SimulationEngine:
 
         return positions
 
-    def _advance_group_to_next_hole(self, group: PlayerGroup):
+    def _advance_group_to_next_hole(self, group: PlayerGroup) -> bool:
         """Advance the group to the next hole or mark as complete."""
         if group.current_hole_number < self.num_holes:
             old_hole = group.current_hole_number
@@ -288,9 +303,71 @@ class SimulationEngine:
                 player.state = "idle"
                 player.strokes = 0
             group.mark_all_players_need_to_shoot()
+            return False
         else:
             group.is_complete = True
-            logger.info(f"Group {group.group_id} has completed the course.")
+            logger.info(f"Group {group.group_id} has completed the course (all 18 holes).")
+            return True
+
+    def can_spawn_new_group(self) -> bool:
+        """Check if conditions allow spawning a new group on hole 1."""        
+        groups_on_hole_1 = [g for g in self.player_groups if g.current_hole_number == 1]
+        
+        if not groups_on_hole_1:
+            return True
+        
+        tee_position = self.get_tee_position(self.holes[1]["tees"][0])
+        
+        for group in groups_on_hole_1:
+            for player in group.players:
+                distance_from_tee = Calculations.get_distance(player.ball_position, tee_position)
+                if distance_from_tee < MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP:
+                    logger.debug(
+                        f"Cannot spawn: Player {player.id} in Group {group.group_id} "
+                        f"only {distance_from_tee:.2f}m from tee (need {MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP}m)"
+                    )
+                    return False
+        
+        return True
+
+    def spawn_new_group(self):
+        """Spawn a new player group on hole 1 with random players."""
+        num_players = random.randint(2, 4)
+        players = []
+        
+        for i in range(num_players):
+            accuracy = random.uniform(0.7, 0.9)
+            strength = random.uniform(0.75, 0.95)
+            
+            player = PlayerAgent(id=self.next_player_id, accuracy=accuracy, strength=strength)
+            players.append(player)
+            logger.info(f"Created Player {self.next_player_id} with accuracy={accuracy:.2f}, strength={strength:.2f}")
+            self.next_player_id += 1
+        
+        new_group = PlayerGroup(
+            id=self.next_group_id,
+            players=players,
+            starting_hole=1,
+            tee_time=self.tick_count
+        )
+        
+        tee_box = self.holes[1]["tees"][4]
+        tee_position = self.get_tee_position(tee_box)
+        
+        for player in new_group.players:
+            player.player_position = tee_position.copy()
+            player.ball_position = tee_position.copy()
+        
+        self.player_groups.append(new_group)
+        
+        self.next_group_id += 1
+        
+        logger.info(
+            f"[Tick {self.tick_count}] Spawned Group {new_group.group_id} on hole 1 "
+            f"with {num_players} players"
+        )
+        
+        return new_group
 
     def get_tee_position(self, tee_box: dict) -> dict:
         """Get the tee position for the hole."""

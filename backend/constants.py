@@ -65,3 +65,6 @@ WIND_UPDATE_TICKER_INTERVAL = 1
 
 # Wind effect factor in percentage effect per m/s of wind speed
 WIND_EFFECT_FACTOR = 0.02
+
+# Distance required in order to spawn a new group from the tee in meters
+MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP = 50.0
