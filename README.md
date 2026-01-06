@@ -80,6 +80,17 @@ make dev
    ```
    The backend will run on `http://localhost:8000`
 
+**Navigation Path Cache:**
+
+The backend includes a pre-computed navigation path cache (`backend/data/navigation_path_cache.json`) for instant startups. The cache must be regenerated if you modify the course layout.
+
+- **Delete cache when changing:** Water polygons, bridge positions, or green locations
+
+To force path recomputation:
+```bash
+rm backend/data/navigation_path_cache.json
+```
+
 ### Frontend Setup
 
 1. Install Node dependencies:

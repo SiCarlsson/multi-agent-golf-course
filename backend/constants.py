@@ -16,7 +16,7 @@ SHOT_TAKING_DISTANCE = 1.0
 FLAG_PLACEMENT_DURATION_TICKS = 3
 
 # Number of ticks before a hole needs flag service
-HOLE_SERVICE_INTERVAL_TICKS = 15
+HOLE_SERVICE_INTERVAL_TICKS = 180.0
 
 # Distance in meters greenkeeper maintains from hole when idle
 GREENKEEPER_IDLE_DISTANCE_METERS = 35.0

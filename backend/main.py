@@ -67,7 +67,12 @@ async def lifespan(app: FastAPI):
     simulation_engine = SimulationEngine()
 
     greenkeeper = GreenkeeperAgent(
-        id=1, num_holes=simulation_engine.num_holes, holes_data=simulation_engine.holes
+        id=1, 
+        num_holes=simulation_engine.num_holes, 
+        holes_data=simulation_engine.holes,
+        navigation_paths=simulation_engine.greenkeeper_paths,
+        water=simulation_engine.water,
+        bridges=simulation_engine.bridges
     )
     simulation_engine.greenkeeper = greenkeeper
 

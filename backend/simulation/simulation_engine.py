@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ..simulation.player_group import PlayerGroup
 from ..utils.calculations import Calculations
+from ..utils.pathfinding import PathFinder
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,13 @@ class SimulationEngine:
         self.greenkeeper = None
         self.wind_agent = None
         self.tick_count = 0
+        self.water = []
+        self.bridges = []
+        self.greenkeeper_paths = {}
 
         self._load_all_holes()
+        self._load_course_features()
+        self._compute_greenkeeper_paths()
         self.num_holes = len(self.holes)
 
     def _load_all_holes(self):
@@ -32,6 +38,61 @@ class SimulationEngine:
 
             with open(hole_file, "r") as f:
                 self.holes[hole_num] = json.load(f)
+
+    def _load_course_features(self):
+        """Load course-wide features like water and bridges."""
+        course_data_dir = Path(__file__).parent.parent / "data" / "course"
+
+        # Load water
+        water_file = course_data_dir / "water.json"
+        if water_file.exists():
+            with open(water_file, "r") as f:
+                water_data = json.load(f)
+                self.water = water_data.get("water", [])
+
+        # Load bridges
+        bridges_file = course_data_dir / "bridges.json"
+        if bridges_file.exists():
+            with open(bridges_file, "r") as f:
+                bridges_data = json.load(f)
+                self.bridges = bridges_data.get("bridges", [])
+
+    def _compute_greenkeeper_paths(self):
+        """Pre-compute shortest water-avoiding paths between all holes."""
+        if not self.holes:
+            return
+
+        cache_file = Path(__file__).parent.parent / "data" / "navigation_paths_cache.json"
+        
+        if cache_file.exists():
+            try:
+                logger.info("Loading greenkeeper paths from cache...")
+                with open(cache_file, "r") as f:
+                    cache_data = json.load(f)
+                    self.greenkeeper_paths = {
+                        tuple(map(int, k.split(','))): v 
+                        for k, v in cache_data.items()
+                    }
+                logger.info(f"Loaded {len(self.greenkeeper_paths)} paths from cache")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to load path cache: {e}. Recomputing...")
+
+        logger.info("Computing greenkeeper paths between all holes...")
+        pathfinder = PathFinder(self.water, self.bridges, self.holes)
+        self.greenkeeper_paths = pathfinder.compute_all_paths(self.holes)
+        logger.info(f"Computed {len(self.greenkeeper_paths)} paths for greenkeeper navigation")
+        
+        try:
+            cache_data = {
+                f"{k[0]},{k[1]}": v 
+                for k, v in self.greenkeeper_paths.items()
+            }
+            with open(cache_file, "w") as f:
+                json.dump(cache_data, f)
+            logger.info(f"Saved paths to cache: {cache_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save path cache: {e}")
 
     def tick(self):
         """Process one simulation step for all active groups."""
@@ -68,13 +129,16 @@ class SimulationEngine:
                     ):
                         greenkeeper_pos = self.greenkeeper.position
                         wind_conditions = self.wind_agent.get_current_conditions()
-                        
-                        other_group_positions = self._get_other_group_positions_on_same_hole(
-                            group, player
+
+                        other_group_positions = (
+                            self._get_other_group_positions_on_same_hole(group, player)
                         )
-                        
+
                         can_shoot = player.can_take_shot(
-                            hole_data, greenkeeper_pos, wind_conditions, other_group_positions
+                            hole_data,
+                            greenkeeper_pos,
+                            wind_conditions,
+                            other_group_positions,
                         )
 
                         if can_shoot:
@@ -114,18 +178,18 @@ class SimulationEngine:
         positions = []
         hole_data = self.holes[current_group.current_hole_number]
         flag_position = hole_data["flag"]
-        
+
         current_distance_to_flag = Calculations.get_distance(
             current_player.ball_position, flag_position
         )
-        
+
         for other_group in self.player_groups:
             if other_group.group_id == current_group.group_id:
                 continue
-            
+
             if other_group.current_hole_number != current_group.current_hole_number:
                 continue
-            
+
             for other_player in other_group.players:
                 if not other_player.is_complete:
                     other_distance_to_flag = Calculations.get_distance(
@@ -133,7 +197,7 @@ class SimulationEngine:
                     )
                     if other_distance_to_flag < current_distance_to_flag:
                         positions.append(other_player.ball_position)
-        
+
         return positions
 
     def _advance_group_to_next_hole(self, group: PlayerGroup):
