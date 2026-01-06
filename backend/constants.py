@@ -4,7 +4,7 @@
 TICK_INTERVAL_SECONDS = 1.0
 
 # Player walking speed in meters per tick
-WALKING_SPEED = 30.0
+WALKING_SPEED = 100.0
 
 # Determine acceptable distance to hole for complete in meters
 HOLE_COMPLETION_DISTANCE = 1.5
@@ -58,6 +58,7 @@ LIE_MULTIPLIERS_UTILITY = {
     "tee": 1.0,
     "rough": 2.0,
     "bunker": 3.0,
+    "water": 5.0,
 }
 
 # Ticks between wind condition updates

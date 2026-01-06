@@ -25,6 +25,7 @@ class ShotUtility:
         hole_data: Dict[str, Any],
         wind_conditions: Dict[str, Any] = None,
         player_accuracy: float = 1.0,
+        water: List[List[Dict[str, float]]] = None,
     ) -> Dict[str, Any]:
         flag = hole_data["flag"]
         distance_to_flag = Calculations.get_distance(ball_position, flag)
@@ -39,18 +40,34 @@ class ShotUtility:
             hole_data,
             wind_conditions,
             player_accuracy,
+            water,
         )
 
         best_shot = None
         best_utility = float("-inf")
 
+        water_shots_rejected = 0
+        total_shots = len(shot_options)
+
         for shot in shot_options:
-            utility = ShotUtility._calculate_shot_utility(shot, hole_data)
+            utility = ShotUtility._calculate_shot_utility(shot, hole_data, water)
             shot["utility"] = utility
+
+            if shot["landing_lie"] == "water":
+                water_shots_rejected += 1
 
             if utility > best_utility:
                 best_utility = utility
                 best_shot = shot
+
+        import logging
+
+        logger = logging.getLogger(__name__)
+        if water_shots_rejected > 0:
+            logger.info(
+                f"Shot selection: Rejected {water_shots_rejected}/{total_shots} options due to water. "
+                f"Selected: club={best_shot['club']}, lie={best_shot['landing_lie']}"
+            )
 
         return best_shot
 
@@ -64,6 +81,7 @@ class ShotUtility:
         hole_data: Dict[str, Any],
         wind_conditions: Dict[str, Any] = None,
         player_accuracy: float = 1.0,
+        water: List[List[Dict[str, float]]] = None,
     ) -> List[Dict[str, Any]]:
         """Generate multiple shot options to evaluate."""
         options = []
@@ -92,7 +110,9 @@ class ShotUtility:
                         wind_conditions,
                         player_accuracy,
                     )
-                    landing_lie = ShotUtility.determine_lie(landing_pos, hole_data)
+                    landing_lie = ShotUtility.determine_lie(
+                        landing_pos, hole_data, water
+                    )
 
                     options.append(
                         {
@@ -108,12 +128,25 @@ class ShotUtility:
 
     @staticmethod
     def _calculate_shot_utility(
-        shot: Dict[str, Any], hole_data: Dict[str, Any]
+        shot: Dict[str, Any],
+        hole_data: Dict[str, Any],
+        water: List[List[Dict[str, float]]] = None,
     ) -> float:
         """Calculate utility value for a shot option."""
         flag = hole_data["flag"]
         landing_pos = shot["landing_position"]
         landing_lie = shot["landing_lie"]
+
+        # Heavily penalize water shots
+        if landing_lie == "water":
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.debug(
+                f"WATER HAZARD: Rejected shot landing at ({landing_pos['x']:.2f}, {landing_pos['y']:.2f}) "
+                f"- would land in water"
+            )
+            return float("-inf")
 
         distance_to_hole = Calculations.get_distance(landing_pos, flag)
         distance_utility = -distance_to_hole
@@ -181,7 +214,11 @@ class ShotUtility:
         return {"x": new_x, "y": new_y}
 
     @staticmethod
-    def determine_lie(position: Dict[str, float], hole_data: Dict[str, Any]) -> str:
+    def determine_lie(
+        position: Dict[str, float],
+        hole_data: Dict[str, Any],
+        water: List[List[Dict[str, float]]] = None,
+    ) -> str:
         """Determine what type of lie the ball is in."""
         if "green" in hole_data and Calculations.point_in_polygon(
             position, hole_data["green"]
@@ -198,6 +235,10 @@ class ShotUtility:
         ):
             return "fairway"
 
-        # TODO: Add water check
+        # Check for water
+        if water:
+            for water_polygon in water:
+                if Calculations.point_in_polygon(position, water_polygon):
+                    return "water"
 
         return "rough"
