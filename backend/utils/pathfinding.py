@@ -9,8 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class PathFinder:
-    """A* pathfinding system for navigating around water hazards."""
-
     def __init__(
         self,
         water: List[List[Dict]],

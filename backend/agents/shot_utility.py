@@ -1,4 +1,5 @@
 import math
+import logging
 from typing import Dict, Any, List
 
 from .wind_agent import WindAgent
@@ -14,10 +15,10 @@ from ..constants import (
 )
 from ..utils.calculations import Calculations
 
+logger = logging.getLogger(__name__)
+
 
 class ShotUtility:
-    """Utility-based decision making for golf shots."""
-
     @staticmethod
     def select_best_shot(
         ball_position: Dict[str, float],
@@ -65,9 +66,6 @@ class ShotUtility:
                 best_utility = utility
                 best_shot = shot
 
-        import logging
-
-        logger = logging.getLogger(__name__)
         if water_shots_rejected > 0:
             logger.info(
                 f"Shot selection: Rejected {water_shots_rejected}/{total_shots} options due to water. "
@@ -145,12 +143,8 @@ class ShotUtility:
 
         # Heavily penalize water shots
         if landing_lie == "water":
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.debug(
-                f"WATER HAZARD: Rejected shot landing at ({landing_pos['x']:.2f}, {landing_pos['y']:.2f}) "
-                f"- would land in water"
+                f"WATER HAZARD: Rejected shot landing at ({landing_pos['x']:.2f}, {landing_pos['y']:.2f}) - would land in water"
             )
             return float("-inf")
 

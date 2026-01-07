@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class SimulationEngine:
-    """Core simulation engine to manage the golf course simulation."""
-
     def __init__(self):
         self.holes = {}
         self.player_groups = []
@@ -132,9 +130,6 @@ class SimulationEngine:
         for group in self.player_groups:
             if not group.is_complete:
                 hole_data = self.holes[group.current_hole_number]
-                logger.debug(
-                    f"[Tick {self.tick_count}] Processing Group {group.group_id} on hole {group.current_hole_number}"
-                )
 
                 if all(p.is_complete for p in group.players):
                     logger.info(
@@ -149,17 +144,8 @@ class SimulationEngine:
                     continue
 
                 if not group.all_shots_taken_this_round():
-                    logger.debug(
-                        f"[Tick {self.tick_count}] Group {group.group_id}: Not all shots taken. "
-                        f"Players need to shoot: {group.players_need_to_shoot}"
-                    )
                     group.set_current_turn_index(hole_data)
                     player = group.players[group.current_turn_index]
-                    logger.debug(
-                        f"[Tick {self.tick_count}] Group {group.group_id}: Current turn - Player {player.id} "
-                        f"(is_complete: {player.is_complete}, state: {player.state}, "
-                        f"ball_pos: ({player.ball_position['x']:.2f}, {player.ball_position['y']:.2f}))"
-                    )
 
                     if (
                         not player.is_complete
@@ -172,16 +158,6 @@ class SimulationEngine:
                             self._get_other_group_positions_on_same_hole(group, player)
                         )
 
-                        flag_distance = Calculations.get_distance(
-                            player.ball_position, hole_data["flag"]
-                        )
-                        logger.debug(
-                            f"[Tick {self.tick_count}] Player {player.id} in Group {group.group_id}: "
-                            f"Distance to flag: {flag_distance:.2f}m, "
-                            f"At player position: ({player.player_position['x']:.2f}, {player.player_position['y']:.2f}), "
-                            f"Ball at: ({player.ball_position['x']:.2f}, {player.ball_position['y']:.2f})"
-                        )
-
                         can_shoot = player.can_take_shot(
                             hole_data,
                             greenkeeper_pos,
@@ -191,77 +167,24 @@ class SimulationEngine:
                         )
 
                         if can_shoot:
-                            logger.info(
-                                f"[Tick {self.tick_count}] Player {player.id} (Group {group.group_id}) taking shot. "
-                                f"Distance to flag: {flag_distance:.2f}m, Strokes: {player.strokes}"
-                            )
                             shot_result = player.take_shot(
-                                hole_data, wind_conditions, self.water, group.current_hole_number, self.holes
+                                hole_data,
+                                wind_conditions,
+                                self.water,
+                                group.current_hole_number,
+                                self.holes,
                             )
                             group.players_need_to_shoot.discard(
                                 group.current_turn_index
                             )
-                            logger.info(
-                                f"[Tick {self.tick_count}] Player {player.id} completed shot {shot_result['stroke_number']}. "
-                                f"New distance: {shot_result['distance_to_flag']:.2f}m, is_complete: {shot_result['is_complete']}"
-                            )
-                        else:
-                            logger.info(
-                                f"[Tick {self.tick_count}] Player {player.id} (Group {group.group_id}) waiting - "
-                                f"group or greenkeeper in landing zone"
-                            )
                     elif player.is_complete:
                         group.players_need_to_shoot.discard(group.current_turn_index)
-                        logger.info(
-                            f"[Tick {self.tick_count}] Player {player.id} (Group {group.group_id}) has completed hole {group.current_hole_number}. "
-                            f"Removing from players_need_to_shoot."
-                        )
-                    else:
-                        logger.warning(
-                            f"[Tick {self.tick_count}] Player {player.id} (Group {group.group_id}): "
-                            f"Not in players_need_to_shoot but also not complete! "
-                            f"is_complete: {player.is_complete}, current_turn_index: {group.current_turn_index}, "
-                            f"players_need_to_shoot: {group.players_need_to_shoot}"
-                        )
-
-                    completion_status = [p.is_complete for p in group.players]
-                    logger.debug(
-                        f"[Tick {self.tick_count}] Group {group.group_id} completion status: {completion_status}"
-                    )
 
                 elif not group.are_all_players_at_ball():
-                    for i, player in enumerate(group.players):
-                        if not player.is_complete:
-                            dist_to_ball = Calculations.get_distance(
-                                player.player_position, player.ball_position
-                            )
-                            logger.debug(
-                                f"[Tick {self.tick_count}] Group {group.group_id}, Player {player.id}: "
-                                f"Walking to ball. Distance remaining: {dist_to_ball:.2f}m"
-                            )
                     group.walk_all_players_to_balls()
-                    logger.info(
-                        f"[Tick {self.tick_count}] Group {group.group_id} players walking to balls"
-                    )
 
                 else:
-                    incomplete_count = sum(
-                        1 for p in group.players if not p.is_complete
-                    )
-                    if incomplete_count == 0:
-                        logger.warning(
-                            f"[Tick {self.tick_count}] Group {group.group_id}: All shots taken, players at ball, "
-                            f"but all players complete. This should have been caught earlier!"
-                        )
-                    logger.debug(
-                        f"[Tick {self.tick_count}] Group {group.group_id}: All players at ball. "
-                        f"Marking all players to shoot. Current players_need_to_shoot: {group.players_need_to_shoot}, "
-                        f"Incomplete players: {incomplete_count}"
-                    )
                     group.mark_all_players_need_to_shoot()
-                    logger.debug(
-                        f"[Tick {self.tick_count}] Group {group.group_id}: After marking, players_need_to_shoot: {group.players_need_to_shoot}"
-                    )
 
         return self.get_state(flag_update)
 
@@ -297,11 +220,8 @@ class SimulationEngine:
     def _advance_group_to_next_hole(self, group: PlayerGroup) -> bool:
         """Advance the group to the next hole or mark as complete."""
         if group.current_hole_number < self.num_holes:
-            old_hole = group.current_hole_number
             group.current_hole_number += 1
-            logger.info(
-                f"Group {group.group_id} completed hole {old_hole}, advancing to hole {group.current_hole_number}."
-            )
+
             for player in group.players:
                 player.is_complete = False
                 tee_pos = self.get_tee_position(
@@ -315,9 +235,6 @@ class SimulationEngine:
             return False
         else:
             group.is_complete = True
-            logger.info(
-                f"Group {group.group_id} has completed the course (all 18 holes)."
-            )
             return True
 
     def can_spawn_new_group(self) -> bool:
@@ -328,9 +245,6 @@ class SimulationEngine:
             return True
 
         if len(groups_on_hole_1) >= 2:
-            logger.debug(
-                f"Cannot spawn: {len(groups_on_hole_1)} groups already on hole 1 (max 1 playing + 1 waiting)"
-            )
             return False
 
         tee_position = self.get_tee_position(self.holes[1]["tees"][0])
@@ -341,10 +255,6 @@ class SimulationEngine:
                     player.ball_position, tee_position
                 )
                 if distance_from_tee < MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP:
-                    logger.debug(
-                        f"Cannot spawn: Player {player.id} in Group {group.group_id} "
-                        f"only {distance_from_tee:.2f}m from tee (need {MIN_DISTANCE_FROM_TEE_TO_SPAWN_NEW_GROUP}m)"
-                    )
                     return False
 
         return True
@@ -362,9 +272,6 @@ class SimulationEngine:
                 id=self.next_player_id, accuracy=accuracy, strength=strength
             )
             players.append(player)
-            logger.info(
-                f"Created Player {self.next_player_id} with accuracy={accuracy:.2f}, strength={strength:.2f}"
-            )
             self.next_player_id += 1
 
         new_group = PlayerGroup(
@@ -386,8 +293,7 @@ class SimulationEngine:
         self.next_group_id += 1
 
         logger.info(
-            f"[Tick {self.tick_count}] Spawned Group {new_group.group_id} on hole 1 "
-            f"with {num_players} players"
+            f"[Tick {self.tick_count}] Spawned Group {new_group.group_id} on hole 1 with {num_players} players"
         )
 
         return new_group

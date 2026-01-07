@@ -52,10 +52,10 @@ class Calculations:
 
     @staticmethod
     def line_segment_intersects_polygon(start: dict, end: dict, polygon: list) -> dict:
-        """Find the first intersection point where a line segment enters a polygon."""
+        """Find the first intersection point where a line enters a polygon."""
 
         def line_intersection(p1, p2, p3, p4):
-            """Find intersection point of two line segments (p1-p2) and (p3-p4)."""
+            """Find intersection point of two lines (p1-p2) and (p3-p4)."""
             x1, y1 = p1["x"], p1["y"]
             x2, y2 = p2["x"], p2["y"]
             x3, y3 = p3["x"], p3["y"]

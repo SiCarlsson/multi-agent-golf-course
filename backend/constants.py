@@ -18,10 +18,6 @@ FLAG_PLACEMENT_DURATION_TICKS = 3
 # Number of ticks before a hole needs flag service
 HOLE_SERVICE_INTERVAL_TICKS = 180.0
 
-# TODO: Is this used?
-# Distance in meters greenkeeper maintains from hole when idle
-GREENKEEPER_IDLE_DISTANCE_METERS = 35.0
-
 # Safety distance in meters
 GREENKEEPER_SAFETY_DISTANCE_METERS = 50.0
 
@@ -57,7 +53,7 @@ LIE_MULTIPLIERS_UTILITY = {
     "green": 0.1,
     "fairway": 0.5,
     "tee": 2.0,
-    "rough": 3.0,
+    "rough": 10.0,
     "bunker": 4.0,
     "water": 5.0,
 }

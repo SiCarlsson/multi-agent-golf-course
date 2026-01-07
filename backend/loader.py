@@ -8,4 +8,4 @@ def regenerate_course_data() -> None:
     """Regenerate all course data files from raw GeoJSON."""
     logger.info("Regenerating course data from raw GeoJSON files...")
     convert_all_holes()
-    logger.info("Course data regeneration complete!")
+    logger.info("Course data regeneration complete")

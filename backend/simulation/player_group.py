@@ -33,7 +33,6 @@ class PlayerGroup:
 
         logger.debug(
             f"Group {self.group_id}: Determining current turn index. "
-            f"Pin at ({pin_position['x']:.2f}, {pin_position['y']:.2f}), "
             f"players_need_to_shoot: {self.players_need_to_shoot}"
         )
 
@@ -44,19 +43,10 @@ class PlayerGroup:
                     player.ball_position, pin_position
                 )
                 players_eligible_to_shoot.append((i, distance_to_pin))
-                logger.debug(
-                    f"Group {self.group_id}, Player {player.id} (index {i}): "
-                    f"distance to pin = {distance_to_pin:.2f}m, eligible to shoot"
-                )
 
                 if distance_to_pin > max_distance:
                     max_distance = distance_to_pin
                     next_player_index = i
-            elif not player.is_complete:
-                logger.debug(
-                    f"Group {self.group_id}, Player {player.id} (index {i}): "
-                    f"not complete but not in players_need_to_shoot (already shot this round)"
-                )
 
         if not players_eligible_to_shoot:
             logger.warning(
@@ -89,8 +79,7 @@ class PlayerGroup:
             )
             if distance >= SHOT_TAKING_DISTANCE:
                 all_at_ball = False
-        
-        logger.debug(f"Group {self.group_id}: are_all_players_at_ball = {all_at_ball}")
+
         return all_at_ball
 
     def walk_all_players_to_balls(self):

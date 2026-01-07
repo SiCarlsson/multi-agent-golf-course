@@ -10,9 +10,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from backend.loader import regenerate_course_data
 from backend.simulation import SimulationEngine
-from backend.simulation.player_group import PlayerGroup
-from backend.agents import PlayerAgent, GreenkeeperAgent, WindAgent
 from backend.constants import TICK_INTERVAL_SECONDS
+from backend.agents import GreenkeeperAgent, WindAgent
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -134,7 +133,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
         while True:
             data = await websocket.receive_text()
-            logger.info(f"Received message from client: {data}")
 
     except WebSocketDisconnect:
         logger.info("Client disconnected")

@@ -20,11 +20,7 @@ def convert_lonlat_to_utm(lon: float, lat: float) -> tuple[float, float]:
 def convert_coordinates_to_points(
     coordinates: List[List[float]], origin_utm: Optional[tuple[float, float]] = None
 ) -> tuple[List[Dict[str, float]], Optional[tuple[float, float]]]:
-    """Convert GeoJSON coordinates [lon, lat] to frontend Point format {x, y} in meters.
-
-    Returns:
-        tuple: (converted points, origin_utm used for conversion)
-    """
+    """Convert GeoJSON coordinates [lon, lat] to frontend Point format {x, y}."""
     if origin_utm is None and coordinates:
         origin_utm = convert_lonlat_to_utm(coordinates[0][0], coordinates[0][1])
 
@@ -158,10 +154,6 @@ def convert_course_feature(
 
     if not feature_path.exists():
         logger.warning(f"No {feature_name}.geojson file found")
-        return {feature_name: []}
-
-    if feature_path.stat().st_size == 0:
-        logger.warning(f"{feature_name}.geojson is empty")
         return {feature_name: []}
 
     with open(feature_path, "r") as f:
