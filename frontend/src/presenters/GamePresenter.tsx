@@ -41,7 +41,7 @@ interface BackendGameState {
 }
 
 const GamePresenter = ({ gameState }: { gameState: GameState }) => {
-  const [courseData, setCourseData] = useState<CourseData>({ holes: [] });
+  const [courseData, setCourseData] = useState<CourseData>({ holes: [], water: [], bridges: [] });
   const [tickIntervalSeconds, setTickIntervalSeconds] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
