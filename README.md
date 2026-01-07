@@ -21,9 +21,9 @@ A multi-agent golf course simulation featuring autonomous AI agents navigating a
 - **Simulation engine** - Written in Python, handles the logic of the project
 - **FastAPI** – WebSocket API for communication with frontend
 - **Artificial intelligence agents**:
-  - **Player agents** (utility-based) - Autonomous shot selection with 242 evaluated options per turn
-  - **Greenkeeper agent** (rule-based) - Pathfinding and course management using A* algorithm
-  - **Wind agent** (stochastic) - Environmental simulation affecting the players
+  - **Player agents** (utility-based)
+  - **Greenkeeper agent** (rule-based)
+  - **Wind agent** (stochastic)
 
 ---
 
