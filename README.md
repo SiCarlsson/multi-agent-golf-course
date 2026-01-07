@@ -5,7 +5,8 @@ This is the course project for Artificial Intelligence and Applications (ID1214)
 ---
 
 ### Project description
-To be written!
+
+A multi-agent golf course simulation featuring autonomous AI agents navigating and playing on an 18-hole golf course. The simulation uses utility-based decision making for players, rule-based pathfinding for the greenkeeper, and a stochastic model (random walk) for wind.
 
 ---
 
@@ -19,11 +20,10 @@ To be written!
 ### Backend (Python)
 - **Simulation engine** - Written in Python, handles the logic of the project
 - **FastAPI** – WebSocket API for communication with frontend
-- **Artificial intelligence agents** (in development):
-  - Player agents
-  - Greenkeeper agents
-  - Weather agent
-  - Wind agent
+- **Artificial intelligence agents**:
+  - **Player agents** (utility-based) - Autonomous shot selection with 242 evaluated options per turn
+  - **Greenkeeper agent** (rule-based) - Pathfinding and course management using A* algorithm
+  - **Wind agent** (stochastic) - Environmental simulation affecting the players
 
 ---
 
@@ -105,8 +105,3 @@ rm backend/data/navigation_path_cache.json
    npm run dev
    ```
    The frontend will run on `http://localhost:5173`
-
----
-
-## **Frontend Architecture / MVP Structure**
-To be written!
